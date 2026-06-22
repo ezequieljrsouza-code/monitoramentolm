@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overview Expedição SPA1</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f0;
+    font-size: 12px;
+    color: #222;
+  }
+
+  /* ── TOP HEADER ── */
+  .top-header {
+    background: #6abf4b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-bottom: 3px solid #4a9e30;
+  }
+
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-box {
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-weight: 900;
+    font-size: 11px;
+    color: #6abf4b;
+    line-height: 1.2;
+  }
+
+  .main-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    text-transform: uppercase;
+  }
+
+  .date-box {
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #444;
+  }
+
+  /* ── UPLOAD SECTION ── */
+  .upload-section {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #e8f4e2;
+    border-bottom: 2px solid #c2ddb8;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .upload-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 2px dashed #6abf4b;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    min-width: 260px;
+  }
+
+  .upload-box:hover { border-color: #4a9e30; background: #f5fff3; }
+
+  .upload-box label {
+    cursor: pointer;
+    font-weight: 600;
+    color: #3a8a20;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .upload-box input[type=file] { display: none; }
+
+  .upload-icon { font-size: 18px; }
+
+  .upload-status {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+  }
+
+  .upload-status.loaded { color: #3a8a20; font-style: normal; font-weight: 600; }
+
+  .btn-process {
+    background: #6abf4b;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-process:hover { background: #4a9e30; }
+  .btn-process:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* ── TABLE WRAPPER ── */
+  .table-wrapper {
+    padding: 8px 8px;
+    overflow-x: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 1000px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  /* ── COLUMN HEADERS ── */
+  thead tr th {
+    background: #6abf4b;
+    color: #fff;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 7px 6px;
+    text-align: center;
+    text-transform: uppercase;
+    border: 1px solid #4a9e30;
+    white-space: nowrap;
+  }
+
+  thead tr.sub-header th {
+    background: #d4edbc;
+    color: #333;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 5px;
+  }
+
+  /* ── ROWS ── */
+  tbody tr {
+    transition: background 0.1s;
+  }
+
+  tbody tr:hover td {
+    filter: brightness(0.95);
+  }
+
+  tbody td {
+    padding: 5px 6px;
+    border: 1px solid #ddd;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .td-origem { text-align: left; font-weight: 600; padding-left: 10px; }
+  .td-id { font-weight: 700; font-size: 11px; color: #555; }
+  .td-obs { text-align: left; min-width: 180px; max-width: 340px; }
+
+  /* striped */
+  tbody tr:nth-child(even) td { background: #f9fdf7; }
+  tbody tr:nth-child(odd) td { background: #fff; }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 10px;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    min-width: 110px;
+  }
+
+  .badge-check      { background: #d4edbc; color: #2d6a00; border: 1.5px solid #6abf4b; }
+  .badge-em-exp     { background: #a8d89e; color: #1a5200; border: 1.5px solid #4a9e30; }
+  .badge-antecipacao{ background: #005fa3; color: #fff; border: 1.5px solid #003d70; }
+  .badge-a-caminho-xpt { background: #6ec6e6; color: #00384d; border: 1.5px solid #39aed0; }
+  .badge-a-caminho-nex { background: #b8d4f0; color: #1a3a5e; border: 1.5px solid #6699cc; }
+  .badge-risco      { background: #ff9500; color: #fff; border: 1.5px solid #cc7200; }
+  .badge-noshow     { background: #d9362b; color: #fff; border: 1.5px solid #a0201a; }
+  .badge-sem-risco  { background: #e8e8e8; color: #444; border: 1.5px solid #bbb; }
+  .badge-supriu     { background: #7b2d8b; color: #fff; border: 1.5px solid #5a1f68; }
+  .badge-reoferta   { background: #e06030; color: #fff; border: 1.5px solid #b04020; }
+  .badge-dobra      { background: #b5d870; color: #3a4a00; border: 1.5px solid #8aaa30; }
+  .badge-driver     { background: #70c070; color: #003300; border: 1.5px solid #4a9e4a; }
+  .badge-sem-atv    { background: #f5f5f5; color: #666; border: 1.5px solid #ccc; }
+  .badge-outros     { background: #333; color: #fff; border: 1.5px solid #000; }
+  .badge-erro       { background: #6b3a00; color: #ffd080; border: 1.5px solid #3d2000; }
+  .badge-nao-iniciado { background: #e8e0f0; color: #4a2080; border: 1.5px solid #9060c0; }
+
+  /* ── DROPDOWN STATUS ── */
+  .status-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropdown-arrow {
+    display: inline-block;
+    background: rgba(0,0,0,0.15);
+    color: inherit;
+    border: none;
+    border-radius: 0 10px 10px 0;
+    padding: 0 6px;
+    cursor: pointer;
+    font-size: 10px;
+    vertical-align: middle;
+    margin-left: 2px;
+    line-height: 20px;
+  }
+
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 2px);
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    z-index: 999;
+    min-width: 170px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    padding: 4px;
+  }
+
+  .dropdown-menu.open { display: block; }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .dropdown-item:hover { background: #f0f0f0; }
+
+  .dropdown-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── OBSERVATIONS INPUT ── */
+  .obs-input {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 3px 6px;
+    font-size: 11px;
+    width: 100%;
+    min-width: 160px;
+    background: #fafff8;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .obs-input:focus {
+    border-color: #6abf4b;
+    outline: none;
+    background: #fff;
+  }
+
+  /* ── DIT badge ── */
+  .dit-val {
+    font-weight: 700;
+    color: #333;
+  }
+
+  .dit-val.high { color: #c03000; }
+  .dit-val.medium { color: #b07000; }
+
+  /* ── FOOTER SUMMARY ── */
+  .footer-summary {
+    display: flex;
+    gap: 16px;
+    padding: 8px 12px;
+    background: #e8f4e2;
+    border-top: 2px solid #c2ddb8;
+    flex-wrap: wrap;
+    font-size: 11px;
+  }
+
+  .summary-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #3a6020;
+  }
+
+  .summary-num {
+    font-size: 16px;
+    font-weight: 900;
+    color: #2d6a00;
+  }
+
+  /* ── LEGEND ── */
+  .legend-section {
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #f9fcf7;
+    border-top: 1px solid #ddd;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: #444;
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* number columns */
+  .num { color: #333; font-weight: 600; }
+  .num-green { color: #2a8000; font-weight: 700; }
+  .num-blue { color: #1060c0; font-weight: 700; }
+  .num-orange { color: #d06000; font-weight: 700; }
+  .num-red { color: #c02020; font-weight: 700; }
+
+  .empty-state {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<div class="top-header">
+  <div class="logo-area">
+    <div class="logo-box">mercado<br>envios</div>
+  </div>
+  <div class="main-title">📦 Overview Expedição SPA1</div>
+  <div class="date-box" id="dateDisplay">21/06/2026</div>
+</div>
+
+<!-- UPLOAD SECTION -->
+<div class="upload-section">
+  <div class="upload-box">
+    <span class="upload-icon">🔗</span>
+    <label>
+      <input type="file" id="apiFile" accept=".csv">
+      API Logistics (SPA1)
+    </label>
+    <span class="upload-status" id="apiStatus">Nenhum arquivo</span>
+  </div>
+
+  <div class="upload-box">
+    <span class="upload-icon">📋</span>
+    <label>
+      <input type="file" id="promessasFile" accept=".csv">
+      Promessas No Show
+    </label>
+    <span class="upload-status" id="promStatus">Nenhum arquivo</span>
+  </div>
+
+  <button class="btn-process" id="btnProcess" onclick="processFiles()" disabled>
+    ▶ Processar
+  </button>
+
+  <button class="btn-process" style="background:#888;" onclick="loadDemoData()">
+    📊 Carregar Demo
+  </button>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrapper">
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th rowspan="2" style="min-width:50px">ID<br>ORIGEM</th>
+        <th rowspan="2" style="min-width:130px">ORIGEM</th>
+        <th colspan="2" style="background:#5aaa3b">PLANEJADAS</th>
+        <th rowspan="2" style="min-width:55px">TOTAL</th>
+        <th rowspan="2" style="min-width:70px">ROTAS<br>EXPEDIDAS</th>
+        <th rowspan="2" style="min-width:70px">ROTAS<br>PENDENTES</th>
+        <th rowspan="2" style="min-width:70px">IMPACTO<br>DIT</th>
+        <th rowspan="2" style="min-width:140px">STATUS</th>
+        <th rowspan="2" style="min-width:200px">OBSERVAÇÃO</th>
+      </tr>
+      <tr class="sub-header">
+        <th>SPA1</th>
+        <th>SPA2</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="10" class="empty-state">Carregue os arquivos CSV e clique em <strong>Processar</strong>, ou use <strong>Carregar Demo</strong> para ver dados de exemplo.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER SUMMARY -->
+<div class="footer-summary" id="footerSummary" style="display:none">
+  <div class="summary-item">
+    <span>Total Origens:</span>
+    <span class="summary-num" id="sumOrigens">0</span>
+  </div>
+  <div class="summary-item">
+    <span>Total Planejadas:</span>
+    <span class="summary-num" id="sumPlanejadas">0</span>
+  </div>
+  <div class="summary-item">
+    <span>Total Expedidas:</span>
+    <span class="summary-num" id="sumExpedidas">0</span>
+  </div>
+  <div class="summary-item">
+    <span>Total Pendentes:</span>
+    <span class="summary-num" id="sumPendentes">0</span>
+  </div>
+  <div class="summary-item">
+    <span>Total DIT:</span>
+    <span class="summary-num" id="sumDit">0</span>
+  </div>
+  <div class="summary-item">
+    <span>No Show:</span>
+    <span class="summary-num" style="color:#c03030" id="sumNoShow">0</span>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend-section" id="legendSection" style="display:none">
+  <strong style="color:#555;font-size:11px">Status:</strong>
+  <div class="legend-item"><div class="legend-dot" style="background:#6abf4b"></div>OK</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a8d89e"></div>Em Expedição</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#005fa3"></div>Antecipação</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6ec6e6"></div>A Caminho XPT</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#b8d4f0"></div>A Caminho NEX</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff9500"></div>Risco NoShow</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d9362b"></div>No Show</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#7b2d8b"></div>Supriu Rota</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e06030"></div>Reoferta</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#b5d870"></div>Dobra Alinhada</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#70c070"></div>Driver a Caminho</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#333"></div>Outros</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6b3a00"></div>Erro Operacional</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9060c0"></div>Não Iniciado</div>
+</div>
+
+<script>
+// ── STATUS CONFIG ──
+const STATUS_OPTIONS = [
+  { key: 'ok',          label: '✅',               badge: 'badge-check',      cls: 'badge-check',      color: '#6abf4b' },
+  { key: 'antecipacao', label: 'ANTECIPAÇÃO',       badge: 'badge-antecipacao',cls: 'badge-antecipacao',color: '#005fa3' },
+  { key: 'em_exp',      label: 'EM EXPEDIÇÃO',      badge: 'badge-em-exp',     cls: 'badge-em-exp',     color: '#4a9e30' },
+  { key: 'ac_xpt',      label: 'A CAMINHO XPT',     badge: 'badge-a-caminho-xpt',cls:'badge-a-caminho-xpt',color:'#39aed0' },
+  { key: 'ac_nex',      label: 'A CAMINHO NEX',     badge: 'badge-a-caminho-nex',cls:'badge-a-caminho-nex',color:'#6699cc' },
+  { key: 'risco',       label: 'RISCO NOSHOW',      badge: 'badge-risco',      cls: 'badge-risco',      color: '#ff9500' },
+  { key: 'noshow',      label: 'NO SHOW',           badge: 'badge-noshow',     cls: 'badge-noshow',     color: '#d9362b' },
+  { key: 'sem_risco',   label: 'SEM RISCO NOSHOW',  badge: 'badge-sem-risco',  cls: 'badge-sem-risco',  color: '#bbb' },
+  { key: 'supriu',      label: 'SUPRIU ROTA',       badge: 'badge-supriu',     cls: 'badge-supriu',     color: '#7b2d8b' },
+  { key: 'reoferta',    label: 'REOFERTA',          badge: 'badge-reoferta',   cls: 'badge-reoferta',   color: '#e06030' },
+  { key: 'dobra',       label: 'DOBRA ALINHADA',    badge: 'badge-dobra',      cls: 'badge-dobra',      color: '#8aaa30' },
+  { key: 'driver',      label: 'DRIVER A CAMINHO',  badge: 'badge-driver',     cls: 'badge-driver',     color: '#4a9e4a' },
+  { key: 'sem_atv',     label: 'SEM ATIVIDADE',     badge: 'badge-sem-atv',    cls: 'badge-sem-atv',    color: '#ccc' },
+  { key: 'outros',      label: 'OUTROS',            badge: 'badge-outros',     cls: 'badge-outros',     color: '#333' },
+  { key: 'erro',        label: 'ERRO OPERACIONAL',  badge: 'badge-erro',       cls: 'badge-erro',       color: '#6b3a00' },
+  { key: 'nao_iniciado',label: 'NÃO INICIADO',      badge: 'badge-nao-iniciado',cls:'badge-nao-iniciado',color:'#9060c0' },
+];
+
+let tableData = [];
+let apiCSVContent = null;
+let promCSVContent = null;
+let openDropdownIdx = null;
+
+// ── FILE INPUTS ──
+document.getElementById('apiFile').addEventListener('change', function(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    apiCSVContent = ev.target.result;
+    document.getElementById('apiStatus').textContent = f.name;
+    document.getElementById('apiStatus').className = 'upload-status loaded';
+    checkBothLoaded();
+  };
+  reader.readAsText(f, 'UTF-8');
+});
+
+document.getElementById('promessasFile').addEventListener('change', function(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    promCSVContent = ev.target.result;
+    document.getElementById('promStatus').textContent = f.name;
+    document.getElementById('promStatus').className = 'upload-status loaded';
+    checkBothLoaded();
+  };
+  reader.readAsText(f, 'UTF-8');
+});
+
+function checkBothLoaded() {
+  document.getElementById('btnProcess').disabled = !(apiCSVContent && promCSVContent);
+}
+
+// ── CSV PARSER ──
+function parseCSV(text) {
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  if (lines.length < 2) return [];
+  let header = lines[0].replace(/^\uFEFF/,'').split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = smartSplitCSV(lines[i]);
+    const obj = {};
+    header.forEach((h, j) => obj[h] = (vals[j] || '').trim().replace(/^"|"$/g,''));
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function smartSplitCSV(line) {
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+
+// ── PROCESS FILES ──
+function processFiles() {
+  if (!apiCSVContent || !promCSVContent) return;
+
+  const df1 = parseCSV(apiCSVContent);
+  const df2 = parseCSV(promCSVContent);
+
+  // Compute aggregates
+  const spa1Routes = {}, spa2Routes = {}, ditPkgs = {};
+  const exp = {}, pend = {}, totalRoutes = {};
+
+  // df2 → planned routes per ROTA and SHP_LG_FACILITY_ID
+  df2.forEach(row => {
+    const rota = row['ROTA'];
+    const fac  = row['SHP_LG_FACILITY_ID'];
+    const pref = row['PREFIXO'];
+    if (!rota) return;
+
+    // DIT
+    ditPkgs[rota] = (ditPkgs[rota] || 0) + 1;
+
+    // Unique routes per wave
+    if (fac === 'SPA1') {
+      if (!spa1Routes[rota]) spa1Routes[rota] = new Set();
+      spa1Routes[rota].add(pref);
+    } else if (fac === 'SPA2') {
+      if (!spa2Routes[rota]) spa2Routes[rota] = new Set();
+      spa2Routes[rota].add(pref);
+    }
+  });
+
+  // df1 → dispatched / pending
+  df1.forEach(row => {
+    const fid = (row['facilityId'] || row['\uFEFFFacilityId'] || row['id'] || '').trim();
+    const fac = row['facilityId'] || '';
+    const status = row['status'] || '';
+    const carrier = row['carrier'] || '';
+    const key = carrier && !['EPA1','EPA2','EPA3','EPA4','EPA5','EPA6','EPA7','EPA8','EPA9','ETO4','BRNPA26','BRNPA75','BRNPA193'].includes(fac) ? carrier : fac;
+
+    if (!key) return;
+    totalRoutes[key] = (totalRoutes[key] || 0) + 1;
+    if (['active','close','return_to_station'].includes(status)) exp[key] = (exp[key] || 0) + 1;
+    if (status === 'planned') pend[key] = (pend[key] || 0) + 1;
+  });
+
+  // Build rows
+  const xptFacilities = ['EPA1','EPA2','EPA3','EPA4','EPA5','EPA6','EPA7','EPA8','EPA9','ETO4'];
+  const nexFacilities = ['BRNPA26','BRNPA75','BRNPA193'];
+  const svcCarriers = [];
+  const carrierSet = new Set();
+  df1.forEach(row => {
+    const fac = row['facilityId'] || '';
+    const carrier = row['carrier'] || '';
+    if (!xptFacilities.includes(fac) && !nexFacilities.includes(fac) && carrier) {
+      if (!carrierSet.has(carrier)) { svcCarriers.push(carrier); carrierSet.add(carrier); }
+    }
+  });
+
+  tableData = [];
+
+  xptFacilities.forEach(fid => {
+    if (!totalRoutes[fid] && !(spa1Routes[fid]||{}).size && !(spa2Routes[fid]||{}).size) return;
+    tableData.push({
+      id_origem: 'XPT', origem: fid,
+      spa1: spa1Routes[fid] ? spa1Routes[fid].size : 0,
+      spa2: spa2Routes[fid] ? spa2Routes[fid].size : 0,
+      total: totalRoutes[fid] || 0,
+      expedidas: exp[fid] || 0,
+      pendentes: pend[fid] || 0,
+      dit: ditPkgs[fid] || 0,
+      status: 'ok', obs: ''
+    });
+  });
+
+  svcCarriers.forEach(carrier => {
+    tableData.push({
+      id_origem: 'SVC', origem: carrier,
+      spa1: 0, spa2: 0,
+      total: totalRoutes[carrier] || 0,
+      expedidas: exp[carrier] || 0,
+      pendentes: pend[carrier] || 0,
+      dit: 0,
+      status: 'ok', obs: ''
+    });
+  });
+
+  nexFacilities.forEach(fid => {
+    if (!totalRoutes[fid] && !(spa1Routes[fid]||{}).size && !(spa2Routes[fid]||{}).size) return;
+    tableData.push({
+      id_origem: 'NEX', origem: fid,
+      spa1: spa1Routes[fid] ? spa1Routes[fid].size : 0,
+      spa2: spa2Routes[fid] ? spa2Routes[fid].size : 0,
+      total: totalRoutes[fid] || 0,
+      expedidas: exp[fid] || 0,
+      pendentes: pend[fid] || 0,
+      dit: ditPkgs[fid] || 0,
+      status: 'ok', obs: ''
+    });
+  });
+
+  renderTable();
+}
+
+// ── DEMO DATA (pre-computed from files) ──
+function loadDemoData() {
+  tableData = [
+    {id_origem:'XPT',origem:'EPA1',spa1:0,spa2:0,total:47,expedidas:47,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'XPT',origem:'EPA2',spa1:2,spa2:3,total:19,expedidas:18,pendentes:1,dit:518,status:'noshow',obs:'NO SHOW: M2_PM1 / M1_PM1'},
+    {id_origem:'XPT',origem:'EPA3',spa1:8,spa2:2,total:29,expedidas:21,pendentes:8,dit:805,status:'risco',obs:'Risco rotas de Paragominas 3 rotas'},
+    {id_origem:'XPT',origem:'EPA4',spa1:7,spa2:11,total:64,expedidas:57,pendentes:7,dit:1371,status:'em_exp',obs:''},
+    {id_origem:'XPT',origem:'EPA5',spa1:7,spa2:13,total:33,expedidas:28,pendentes:5,dit:1863,status:'noshow',obs:'J31_pm1, J21_pm7, J16_pm1, J28_pm1, J25_pm1, J17_pm1...'},
+    {id_origem:'XPT',origem:'EPA6',spa1:8,spa2:3,total:17,expedidas:9,pendentes:8,dit:931,status:'noshow',obs:'SPR ELEVADO: 5 ME EXTRA K7, K3, K16, K6, K5, K4'},
+    {id_origem:'XPT',origem:'EPA7',spa1:2,spa2:3,total:26,expedidas:14,pendentes:12,dit:357,status:'em_exp',obs:''},
+    {id_origem:'XPT',origem:'EPA8',spa1:0,spa2:0,total:17,expedidas:17,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'XPT',origem:'EPA9',spa1:0,spa2:0,total:20,expedidas:20,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'XPT',origem:'ETO4',spa1:0,spa2:13,total:83,expedidas:31,pendentes:52,dit:1182,status:'em_exp',obs:''},
+    {id_origem:'SVC',origem:'JL Castro',spa1:0,spa2:0,total:162,expedidas:147,pendentes:15,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'RodaCoop',spa1:0,spa2:0,total:80,expedidas:67,pendentes:13,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'COOPMETRO',spa1:0,spa2:0,total:15,expedidas:15,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'PANTERA LOG TRAN',spa1:0,spa2:0,total:10,expedidas:10,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'50 Mais',spa1:0,spa2:0,total:13,expedidas:13,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'BRJTransportes',spa1:0,spa2:0,total:49,expedidas:49,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'Kangu Logistics',spa1:0,spa2:0,total:28,expedidas:28,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'WLS CARGO',spa1:0,spa2:0,total:5,expedidas:5,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'SVC',origem:'Envios Extra',spa1:0,spa2:0,total:148,expedidas:148,pendentes:0,dit:0,status:'em_exp',obs:''},
+    {id_origem:'NEX',origem:'BRNPA26',spa1:1,spa2:0,total:39,expedidas:39,pendentes:0,dit:34,status:'noshow',obs:'INDISPONIBILIDADE MEEX'},
+    {id_origem:'NEX',origem:'BRNPA75',spa1:0,spa2:0,total:16,expedidas:16,pendentes:0,dit:0,status:'ok',obs:''},
+    {id_origem:'NEX',origem:'BRNPA193',spa1:3,spa2:0,total:44,expedidas:44,pendentes:0,dit:113,status:'noshow',obs:'INDISPONIBILIDADE MEEX'},
+  ];
+  renderTable();
+}
+
+// ── RENDER TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  if (tableData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Nenhum dado encontrado.</td></tr>';
+    return;
+  }
+
+  tableData.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    const statusOpt = STATUS_OPTIONS.find(s => s.key === row.status) || STATUS_OPTIONS[0];
+
+    const ditClass = row.dit > 1000 ? 'dit-val high' : row.dit > 300 ? 'dit-val medium' : 'dit-val';
+    const pendClass = row.pendentes > 5 ? 'num-red' : row.pendentes > 0 ? 'num-orange' : 'num-green';
+
+    tr.innerHTML = `
+      <td class="td-id">${row.id_origem}</td>
+      <td class="td-origem">${row.origem}</td>
+      <td class="num-blue">${row.spa1 || '—'}</td>
+      <td class="num">${row.spa2 || '—'}</td>
+      <td class="num" style="font-weight:700">${row.total}</td>
+      <td class="num-green">${row.expedidas}</td>
+      <td class="${pendClass}">${row.pendentes}</td>
+      <td><span class="${ditClass}">${row.dit > 0 ? row.dit.toLocaleString('pt-BR') : '—'}</span></td>
+      <td>
+        <div class="status-dropdown">
+          <span class="badge ${statusOpt.cls}" onclick="toggleDropdown(${idx}, event)">
+            ${statusOpt.label}
+            <button class="dropdown-arrow" onclick="toggleDropdown(${idx}, event)">▾</button>
+          </span>
+          <div class="dropdown-menu" id="dd_${idx}">
+            ${STATUS_OPTIONS.map(opt => `
+              <div class="dropdown-item" onclick="setStatus(${idx}, '${opt.key}')">
+                <div class="dropdown-dot" style="background:${opt.color}"></div>
+                ${opt.label}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </td>
+      <td class="td-obs">
+        <input class="obs-input" type="text" value="${escHtml(row.obs)}"
+               placeholder="Adicionar observação..."
+               oninput="updateObs(${idx}, this.value)">
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updateSummary();
+  document.getElementById('footerSummary').style.display = 'flex';
+  document.getElementById('legendSection').style.display = 'flex';
+}
+
+function escHtml(str) {
+  return (str||'').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+// ── DROPDOWN ──
+function toggleDropdown(idx, e) {
+  e.stopPropagation();
+  const dd = document.getElementById(`dd_${idx}`);
+  const wasOpen = dd.classList.contains('open');
+  closeAllDropdowns();
+  if (!wasOpen) {
+    dd.classList.add('open');
+    openDropdownIdx = idx;
+  }
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  openDropdownIdx = null;
+}
+
+document.addEventListener('click', closeAllDropdowns);
+
+function setStatus(idx, key) {
+  tableData[idx].status = key;
+  closeAllDropdowns();
+  renderTable();
+}
+
+function updateObs(idx, val) {
+  tableData[idx].obs = val;
+}
+
+// ── SUMMARY ──
+function updateSummary() {
+  document.getElementById('sumOrigens').textContent = tableData.length;
+  document.getElementById('sumPlanejadas').textContent = tableData.reduce((s,r) => s + r.spa1 + r.spa2, 0);
+  document.getElementById('sumExpedidas').textContent = tableData.reduce((s,r) => s + r.expedidas, 0);
+  document.getElementById('sumPendentes').textContent = tableData.reduce((s,r) => s + r.pendentes, 0);
+  document.getElementById('sumDit').textContent = tableData.reduce((s,r) => s + r.dit, 0).toLocaleString('pt-BR');
+  document.getElementById('sumNoShow').textContent = tableData.filter(r => r.status === 'noshow').length;
+}
+
+// ── DATE ──
+function updateDate() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  document.getElementById('dateDisplay').textContent = `${dd}/${mm}/${yyyy}`;
+}
+updateDate();
+</script>
+</body>
+</html>
