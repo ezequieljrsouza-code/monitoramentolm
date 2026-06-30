@@ -232,19 +232,29 @@
 
   .dropdown-menu {
     display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 2px);
+    position: fixed;
     background: #fff;
     border: 1px solid #ccc;
     border-radius: 8px;
-    z-index: 999;
-    min-width: 170px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    z-index: 9999;
+    min-width: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
     padding: 4px;
   }
 
   .dropdown-menu.open { display: block; }
+
+  .dropdown-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.15);
+    z-index: 9998;
+  }
+
+  .dropdown-overlay.open { display: block; }
 
   .dropdown-item {
     display: flex;
@@ -470,6 +480,8 @@
   <div class="legend-item"><div class="legend-dot" style="background:#6b3a00"></div>Erro Operacional</div>
   <div class="legend-item"><div class="legend-dot" style="background:#9060c0"></div>Não Iniciado</div>
 </div>
+
+<div class="dropdown-overlay" id="dropdownOverlay" onclick="closeAllDropdowns()"></div>
 
 <script>
 // ── STATUS CONFIG ──
@@ -757,17 +769,36 @@ function toggleDropdown(idx, e) {
   const wasOpen = dd.classList.contains('open');
   closeAllDropdowns();
   if (!wasOpen) {
+    // Position the dropdown near the clicked badge
+    const badge = e.currentTarget.closest('.status-dropdown').querySelector('.badge');
+    const rect = badge.getBoundingClientRect();
+    const menuWidth = 180;
+    let left = rect.right - menuWidth;
+    if (left < 8) left = rect.left;
+    let top = rect.bottom + 4;
+    // If menu would overflow bottom of viewport, open it upwards
+    const estMenuHeight = 320;
+    if (top + estMenuHeight > window.innerHeight) {
+      top = rect.top - estMenuHeight - 4;
+      if (top < 8) top = 8;
+    }
+    dd.style.left = `${left}px`;
+    dd.style.top = `${top}px`;
+
     dd.classList.add('open');
+    document.getElementById('dropdownOverlay').classList.add('open');
     openDropdownIdx = idx;
   }
 }
 
 function closeAllDropdowns() {
   document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  document.getElementById('dropdownOverlay').classList.remove('open');
   openDropdownIdx = null;
 }
 
-document.addEventListener('click', closeAllDropdowns);
+// Outside-click handled by .dropdown-overlay click instead of document listener,
+// so clicks inside the menu (and elsewhere) don't prematurely close it.
 
 function setStatus(idx, key) {
   tableData[idx].status = key;
