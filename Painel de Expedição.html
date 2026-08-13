@@ -1,0 +1,1126 @@
+<meta charset="UTF-8">
+<title>Expedição SPA1 · SPA2</title>
+<style>
+  :root {
+    --bg: #faf9f4;
+    --surface: #ffffff;
+    --surface-2: #f2f0e6;
+    --surface-3: #e9e6d8;
+    --border: #e0ddcd;
+    --border-strong: #cac6b0;
+    --text: #201f19;
+    --text-muted: #6d6a5a;
+    --text-faint: #97937e;
+    --accent: #26297e;
+    --accent-strong: #1a1c5c;
+    --accent-soft: #e8e8fb;
+    --brand: #ffe600;
+    --brand-ink: #3a3300;
+    --good: #16794f;
+    --good-soft: #e0f5ea;
+    --warn: #9a5b0a;
+    --warn-soft: #fbead0;
+    --critical: #b23127;
+    --critical-soft: #fbe4e0;
+    --info: #1f5fa6;
+    --info-soft: #e2edf9;
+    --muted-chip: #6d6a5a;
+    --muted-chip-soft: #ecebe2;
+    --cat-xpt: #2e5fa3;
+    --cat-svc: #7a4fa8;
+    --cat-nex: #147d72;
+    --cat-dc: #a85f1f;
+    --shadow: 0 1px 2px rgba(32,31,25,0.06), 0 4px 16px rgba(32,31,25,0.06);
+    --radius: 10px;
+    --focus: #26297e;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15151a;
+      --surface: #1c1c23;
+      --surface-2: #232430;
+      --surface-3: #2c2d3a;
+      --border: #34354420;
+      --border: #383a49;
+      --border-strong: #4b4d60;
+      --text: #eeeef2;
+      --text-muted: #a6a6b8;
+      --text-faint: #7d7d90;
+      --accent: #9a9df0;
+      --accent-strong: #b6b9ff;
+      --accent-soft: #2b2d5c;
+      --brand: #ffe600;
+      --brand-ink: #3a3300;
+      --good: #4fce9a;
+      --good-soft: #133a2b;
+      --warn: #e8b158;
+      --warn-soft: #43350f;
+      --critical: #ef8478;
+      --critical-soft: #4a221e;
+      --info: #7db2ec;
+      --info-soft: #1c3350;
+      --muted-chip: #a6a6b8;
+      --muted-chip-soft: #2c2d3a;
+      --cat-xpt: #7fa8e0;
+      --cat-svc: #bd9be5;
+      --cat-nex: #5fc9bb;
+      --cat-dc: #e0a565;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+      --focus: #b6b9ff;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #15151a;
+    --surface: #1c1c23;
+    --surface-2: #232430;
+    --surface-3: #2c2d3a;
+    --border: #383a49;
+    --border-strong: #4b4d60;
+    --text: #eeeef2;
+    --text-muted: #a6a6b8;
+    --text-faint: #7d7d90;
+    --accent: #9a9df0;
+    --accent-strong: #b6b9ff;
+    --accent-soft: #2b2d5c;
+    --brand: #ffe600;
+    --brand-ink: #3a3300;
+    --good: #4fce9a;
+    --good-soft: #133a2b;
+    --warn: #e8b158;
+    --warn-soft: #43350f;
+    --critical: #ef8478;
+    --critical-soft: #4a221e;
+    --info: #7db2ec;
+    --info-soft: #1c3350;
+    --muted-chip: #a6a6b8;
+    --muted-chip-soft: #2c2d3a;
+    --cat-xpt: #7fa8e0;
+    --cat-svc: #bd9be5;
+    --cat-nex: #5fc9bb;
+    --cat-dc: #e0a565;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    --focus: #b6b9ff;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+  ::selection { background: var(--accent-soft); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .topbar {
+    background: var(--brand);
+    color: var(--brand-ink);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+  .topbar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-ink); opacity: 0.55; }
+  .topbar .spacer { flex: 1; }
+  .topbar .clock { font-variant-numeric: tabular-nums; opacity: 0.75; font-weight: 600; }
+
+  header.page {
+    padding: 22px 24px 4px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  header.page h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  header.page .sub {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  header.page .sub .stations {
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 9px;
+    border-radius: 999px;
+  }
+  .save-indicator {
+    font-size: 12px;
+    color: var(--text-faint);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .save-indicator .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--good);
+  }
+
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 18px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+    min-width: 0;
+  }
+  .kpi .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-faint);
+    font-weight: 700;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kpi .value {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .kpi .value.good { color: var(--good); }
+  .kpi .value.warn { color: var(--warn); }
+  .kpi .value.critical { color: var(--critical); }
+  .kpi .sub { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .kpi .bar {
+    margin-top: 8px;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--surface-3);
+    overflow: hidden;
+  }
+  .kpi .bar > span {
+    display: block; height: 100%;
+    background: var(--good);
+    border-radius: 3px;
+    transition: width 0.25s ease;
+  }
+
+  .group-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .group-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+  .group-card:hover { border-color: var(--border-strong); }
+  .group-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .group-card .swatch { width: 10px; height: 32px; border-radius: 4px; flex-shrink: 0; }
+  .group-card .meta { min-width: 0; flex: 1; }
+  .group-card .name { font-weight: 700; font-size: 13px; }
+  .group-card .count { font-size: 11.5px; color: var(--text-muted); }
+  .group-card .pending { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .toolbar .search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    min-width: 240px;
+    flex: 1;
+    max-width: 340px;
+  }
+  .toolbar .search svg { flex-shrink: 0; color: var(--text-faint); }
+  .toolbar .search input {
+    border: none; outline: none; background: transparent;
+    font: inherit; color: var(--text); width: 100%;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    padding: 3px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+  }
+  .tabs button {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .tabs button.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+  .toolbar .spacer { flex: 1; }
+  .btn {
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.ghost:hover { background: var(--surface-2); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: auto;
+    max-height: 62vh;
+  }
+  table { border-collapse: collapse; width: 100%; min-width: 1180px; }
+  thead th {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface-2);
+    text-align: left;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  thead th.num, td.num { text-align: right; }
+  tbody td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:hover td { background: var(--surface-2); }
+  tbody tr.zero-pending td { background: color-mix(in srgb, var(--good-soft) 35%, transparent); }
+  tbody tr.zero-pending:hover td { background: var(--good-soft); }
+
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700;
+  }
+  .cat-badge .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .origin-name { font-weight: 600; }
+
+  td input[type="number"], td input[type="text"] {
+    width: 100%;
+    border: 1px solid transparent;
+    background: transparent;
+    font: inherit;
+    color: var(--text);
+    padding: 5px 6px;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  td input[type="number"] { width: 62px; text-align: right; }
+  td input[type="text"] { min-width: 140px; }
+  td input:hover { background: var(--surface-2); }
+  td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
+  td input::-webkit-outer-spin-button, td input::-webkit-inner-spin-button { opacity: 0.4; }
+
+  .calc-cell { font-weight: 700; font-variant-numeric: tabular-nums; padding: 5px 10px; }
+  .pending-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; padding: 3px 8px;
+    border-radius: 999px; font-weight: 800; font-size: 12.5px;
+  }
+  .pending-pill.good { background: var(--good-soft); color: var(--good); }
+  .pending-pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pending-pill.critical { background: var(--critical-soft); color: var(--critical); }
+
+  select.status-select {
+    font: inherit; font-weight: 700; font-size: 11.5px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 24px 5px 10px;
+    cursor: pointer;
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+  select.status-select.s-good { background-color: var(--good-soft); color: var(--good); }
+  select.status-select.s-info { background-color: var(--info-soft); color: var(--info); }
+  select.status-select.s-warn { background-color: var(--warn-soft); color: var(--warn); }
+  select.status-select.s-critical { background-color: var(--critical-soft); color: var(--critical); }
+  select.status-select.s-muted { background-color: var(--muted-chip-soft); color: var(--muted-chip); }
+
+  .row-del {
+    border: none; background: transparent; color: var(--text-faint);
+    cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 5px; line-height: 1;
+  }
+  .row-del:hover { background: var(--critical-soft); color: var(--critical); }
+
+  tfoot td {
+    position: sticky; bottom: 0;
+    background: var(--surface-2);
+    border-top: 2px solid var(--border-strong);
+    font-weight: 800;
+    padding: 9px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty-state {
+    padding: 40px; text-align: center; color: var(--text-faint); font-size: 13px;
+  }
+
+  footer.note {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+    color: var(--text-faint);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: var(--text);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+  @media (max-width: 1000px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .group-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="topbar">
+  <span class="dot"></span>
+  <span>MERCADO ENVÍOS · LAST MILE</span>
+  <span class="spacer"></span>
+  <span class="clock num" id="clock"></span>
+</div>
+
+<header class="page">
+  <h1>Painel de Expedição</h1>
+  <div class="sub">
+    <span class="stations">Estações: SPA1, SPA2</span>
+    <span>·</span>
+    <span>Backlog, planejadas e rotas pendentes por origem — editável, recalcula em tempo real</span>
+    <span class="spacer"></span>
+    <span class="save-indicator"><span class="pulse"></span><span id="save-label">Salvo automaticamente</span></span>
+  </div>
+</header>
+
+<main>
+  <section class="kpi-row" id="kpi-row" aria-label="Indicadores gerais"></section>
+
+  <section class="group-row" id="group-row" aria-label="Resumo por origem"></section>
+
+  <section class="toolbar">
+    <label class="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="search" placeholder="Buscar por origem ou ID..." autocomplete="off">
+    </label>
+    <div class="tabs" id="group-tabs"></div>
+    <span class="spacer"></span>
+    <button class="btn" id="btn-add">+ Adicionar origem</button>
+    <button class="btn" id="btn-reset">Restaurar modelo</button>
+    <button class="btn" id="btn-import">⤒ Importar CSV</button>
+    <input type="file" id="file-import" accept=".csv,text/csv" style="display:none">
+    <button class="btn primary" id="btn-export">⤓ Baixar para Sheets (CSV)</button>
+  </section>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:26px"></th>
+          <th>Origem</th>
+          <th class="num">Backlog</th>
+          <th class="num">Planejadas SPA1</th>
+          <th class="num">Planejadas SPA2</th>
+          <th class="num">Total</th>
+          <th class="num">Expedidas</th>
+          <th class="num">Pendentes</th>
+          <th>Status</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td></td>
+          <td id="f-count">—</td>
+          <td class="num" id="f-backlog">0</td>
+          <td class="num" id="f-spa1">0</td>
+          <td class="num" id="f-spa2">0</td>
+          <td class="num" id="f-total">0</td>
+          <td class="num" id="f-exp">0</td>
+          <td class="num" id="f-pend">0</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">Nenhuma origem encontrada para esse filtro.</div>
+  </div>
+</main>
+
+<footer class="note">
+  <span>Modelo baseado em Expedição_SPA1_SPA2.xlsx · valores editáveis salvos neste navegador. <span id="auto-sync-info"></span></span>
+  <span>Última edição: <span id="last-edit">—</span></span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  Bloco atualizado automaticamente pelo Atualizador do Painel (script/executável externo).
+  Não editar manualmente: o conteúdo é sobrescrito a cada sincronização.
+  Formato: {"generatedAt": "ISO-8601 ou null", "rows": [{"grupo","origem","spa1","spa2","expedidas"}, ...]}
+-->
+<script type="application/json" id="live-data">
+{"generatedAt": "2026-08-13T16:04:10.627646-03:00", "rows": [{"grupo": "DC", "origem": "BRDPA11404", "spa1": 6, "spa2": 0, "expedidas": 6}, {"grupo": "DC", "origem": "BRDPA11445", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "DC", "origem": "BRDPA11446", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "DC", "origem": "BRDPA11448", "spa1": 2, "spa2": 0, "expedidas": 2}, {"grupo": "DC", "origem": "BRDPA11449", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "DC", "origem": "BRDPA11452", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "DC", "origem": "BRDPA11459", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "DC", "origem": "BRDPA193", "spa1": 2, "spa2": 0, "expedidas": 2}, {"grupo": "DC", "origem": "BRDPA26", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "NEX", "origem": "BRNPA11416", "spa1": 12, "spa2": 0, "expedidas": 12}, {"grupo": "NEX", "origem": "BRNPA11420", "spa1": 7, "spa2": 0, "expedidas": 7}, {"grupo": "NEX", "origem": "BRNPA11425", "spa1": 19, "spa2": 0, "expedidas": 18}, {"grupo": "NEX", "origem": "BRNPA11440", "spa1": 4, "spa2": 0, "expedidas": 4}, {"grupo": "NEX", "origem": "BRNPA11441", "spa1": 2, "spa2": 0, "expedidas": 2}, {"grupo": "NEX", "origem": "BRNPA11447", "spa1": 2, "spa2": 0, "expedidas": 2}, {"grupo": "NEX", "origem": "BRNPA11448", "spa1": 3, "spa2": 0, "expedidas": 3}, {"grupo": "NEX", "origem": "BRNPA11457", "spa1": 6, "spa2": 0, "expedidas": 5}, {"grupo": "NEX", "origem": "BRNPA11458", "spa1": 1, "spa2": 0, "expedidas": 1}, {"grupo": "NEX", "origem": "BRNPA193", "spa1": 50, "spa2": 0, "expedidas": 50}, {"grupo": "NEX", "origem": "BRNPA26", "spa1": 58, "spa2": 0, "expedidas": 58}, {"grupo": "NEX", "origem": "BRNPA535", "spa1": 18, "spa2": 0, "expedidas": 18}, {"grupo": "NEX", "origem": "BRNPA71", "spa1": 3, "spa2": 0, "expedidas": 3}, {"grupo": "NEX", "origem": "BRNPA736", "spa1": 4, "spa2": 0, "expedidas": 4}, {"grupo": "NEX", "origem": "BRNPA75", "spa1": 31, "spa2": 0, "expedidas": 30}, {"grupo": "NEX", "origem": "BRNPA769", "spa1": 14, "spa2": 0, "expedidas": 14}, {"grupo": "SVC", "origem": "50 Mais", "spa1": 14, "spa2": 0, "expedidas": 14}, {"grupo": "SVC", "origem": "BRJTransportes", "spa1": 43, "spa2": 0, "expedidas": 43}, {"grupo": "SVC", "origem": "COOPMETRO", "spa1": 17, "spa2": 0, "expedidas": 17}, {"grupo": "SVC", "origem": "Envios Extra", "spa1": 11, "spa2": 0, "expedidas": 11}, {"grupo": "SVC", "origem": "JL Castro", "spa1": 12, "spa2": 0, "expedidas": 12}, {"grupo": "SVC", "origem": "Kangu Logistics", "spa1": 32, "spa2": 0, "expedidas": 32}, {"grupo": "SVC", "origem": "PANTERA LOG TRAN", "spa1": 21, "spa2": 0, "expedidas": 21}, {"grupo": "SVC", "origem": "RodaCoop", "spa1": 35, "spa2": 0, "expedidas": 35}, {"grupo": "SVC", "origem": "WLS CARGO", "spa1": 18, "spa2": 0, "expedidas": 18}, {"grupo": "XPT", "origem": "EPA1", "spa1": 54, "spa2": 0, "expedidas": 54}, {"grupo": "XPT", "origem": "EPA2", "spa1": 0, "spa2": 25, "expedidas": 25}, {"grupo": "XPT", "origem": "EPA3", "spa1": 0, "spa2": 57, "expedidas": 42}, {"grupo": "XPT", "origem": "EPA4", "spa1": 0, "spa2": 87, "expedidas": 54}, {"grupo": "XPT", "origem": "EPA5", "spa1": 0, "spa2": 72, "expedidas": 40}, {"grupo": "XPT", "origem": "EPA6", "spa1": 0, "spa2": 25, "expedidas": 25}, {"grupo": "XPT", "origem": "EPA7", "spa1": 0, "spa2": 70, "expedidas": 30}, {"grupo": "XPT", "origem": "EPA8", "spa1": 0, "spa2": 26, "expedidas": 26}, {"grupo": "XPT", "origem": "EPA9", "spa1": 19, "spa2": 0, "expedidas": 19}, {"grupo": "XPT", "origem": "ETO4", "spa1": 0, "spa2": 158, "expedidas": 76}]}
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "expedicao_spa1_spa2_v1";
+
+  var CATEGORIES = {
+    XPT: { label: "XPT", color: "var(--cat-xpt)" },
+    SVC: { label: "SVC", color: "var(--cat-svc)" },
+    NEX: { label: "NEX", color: "var(--cat-nex)" },
+    DC:  { label: "DC",  color: "var(--cat-dc)" }
+  };
+
+  var STATUS_OPTIONS = [
+    "", "✅", "ANTECIPAÇÃO", "EM EXPEDIÇÃO", "A CAMINHO XPT", "A CAMINHO NEX",
+    "RISCO NOSHOW", "NO SHOW", "SEM RISCO NOSHOW", "SUPRIU ROTA", "REOFERTA",
+    "DOBRA ALINHADA", "DRIVER A CAMINHO", "SEM ATIVIDADE", "OUTROS",
+    "ERRO OPERACIONAL", "NÃO INICIADO"
+  ];
+
+  var STATUS_TONE = {
+    "✅": "good", "SUPRIU ROTA": "good", "SEM RISCO NOSHOW": "good",
+    "EM EXPEDIÇÃO": "info", "A CAMINHO XPT": "info", "A CAMINHO NEX": "info",
+    "DRIVER A CAMINHO": "info", "ANTECIPAÇÃO": "info", "DOBRA ALINHADA": "info",
+    "REOFERTA": "warn", "RISCO NOSHOW": "warn", "SEM ATIVIDADE": "warn",
+    "NO SHOW": "critical", "ERRO OPERACIONAL": "critical",
+    "OUTROS": "muted", "NÃO INICIADO": "muted", "": "muted"
+  };
+
+  function seedData() {
+    var rows = [];
+    var id = 1;
+    function add(grupo, origem, backlog, spa1, spa2, expedidas) {
+      rows.push({ id: id++, grupo: grupo, origem: origem, backlog: backlog, spa1: spa1, spa2: spa2, expedidas: expedidas, status: "", obs: "" });
+    }
+    add("XPT","EPA1",0,66,0,50); add("XPT","EPA2",0,0,26,19); add("XPT","EPA3",0,0,59,38);
+    add("XPT","EPA4",0,0,68,53); add("XPT","EPA5",5,0,34,37); add("XPT","EPA6",0,0,26,20);
+    add("XPT","EPA7",0,0,47,23); add("XPT","EPA8",0,0,28,17); add("XPT","EPA9",0,25,0,16);
+    add("XPT","ETO4",0,0,67,46);
+    add("SVC","JL Castro",0,14,0,12); add("SVC","RodaCoop",0,33,0,30); add("SVC","COOPMETRO",0,19,0,17);
+    add("SVC","PANTERA LOG TRAN",0,19,0,13); add("SVC","50 Mais",0,22,0,13); add("SVC","BRJTransportes",0,37,0,36);
+    add("SVC","Kangu Logistics",0,30,0,32); add("SVC","WLS CARGO",0,15,0,16); add("SVC","Envios Extra",0,33,0,6);
+    add("NEX","BRNPA26",0,57,0,42); add("NEX","BRNPA75",0,37,0,23); add("NEX","BRNPA193",0,47,0,46);
+    add("NEX","BRNPA736",0,5,0,3); add("NEX","BRNPA11444",0,0,0,0); add("NEX","BRNPA11440",0,4,0,4);
+    add("NEX","BRNPA769",0,13,0,11); add("NEX","BRNPA527",0,0,0,0); add("NEX","BRNPA240",0,0,0,0);
+    add("NEX","BRNPA535",0,15,0,17); add("NEX","BRNPA11416",0,13,0,11); add("NEX","BRNPA11420",0,7,0,6);
+    add("NEX","BRNPA11425",0,14,0,14); add("NEX","BRNPA11441",0,2,0,2); add("NEX","BRNPA11458",0,2,0,1);
+    add("NEX","BRNPA11447",0,2,0,2); add("NEX","BRNPA71",0,5,0,3); add("NEX","BRNPA11454",0,0,0,0);
+    add("NEX","BRNPA11448",1,3,0,3); add("NEX","BRNPA11457",1,6,0,4);
+    add("DC","BRDPA11404",0,1,0,1); add("DC","BRDPA11445",0,1,0,1); add("DC","BRDPA11446",0,1,0,1);
+    add("DC","BRDPA11447",0,0,0,0); add("DC","BRDPA11448",0,1,0,2); add("DC","BRDPA11449",2,1,0,1);
+    add("DC","BRDPA193",0,1,0,1); add("DC","BRDPA26",0,1,0,1); add("DC","BRDPA11459",0,1,0,1);
+    add("DC","BRDPA11452",0,1,0,1);
+    return rows;
+  }
+
+  var state = {
+    rows: [],
+    filterGroup: "TODOS",
+    search: "",
+    nextId: 1
+  };
+
+  function readLiveData() {
+    try {
+      var el = document.getElementById("live-data");
+      if (!el) return null;
+      var parsed = JSON.parse(el.textContent || el.innerText || "{}");
+      if (parsed && Array.isArray(parsed.rows) && parsed.rows.length) return parsed;
+    } catch (e) {}
+    return null;
+  }
+
+  // Combina as origens extraídas automaticamente (spa1/spa2/expedidas) com os
+  // campos preenchidos manualmente na operação (backlog/status/observação),
+  // que nunca são sobrescritos pela automação.
+  function mergeLiveIntoRows(existingRows, liveRows) {
+    var byKey = {};
+    existingRows.forEach(function (r) { byKey[r.grupo + "||" + r.origem] = r; });
+    var seen = {};
+    var nextId = existingRows.reduce(function (m, r) { return Math.max(m, r.id || 0); }, 0) + 1;
+    var merged = liveRows.map(function (lr) {
+      var key = lr.grupo + "||" + lr.origem;
+      seen[key] = true;
+      var prev = byKey[key];
+      return {
+        id: prev ? prev.id : nextId++,
+        grupo: lr.grupo,
+        origem: lr.origem,
+        backlog: prev ? prev.backlog : 0,
+        spa1: lr.spa1 || 0,
+        spa2: lr.spa2 || 0,
+        expedidas: lr.expedidas || 0,
+        status: prev ? prev.status : "",
+        obs: prev ? prev.obs : ""
+      };
+    });
+    existingRows.forEach(function (r) {
+      var key = r.grupo + "||" + r.origem;
+      if (!seen[key]) {
+        // Origem não apareceu na última coleta (sem rotas ativas): mantém os
+        // campos manuais e zera as contagens, sem excluir a linha.
+        merged.push({ id: r.id, grupo: r.grupo, origem: r.origem, backlog: r.backlog, spa1: 0, spa2: 0, expedidas: 0, status: r.status, obs: r.obs });
+      }
+    });
+    return { rows: merged, nextId: nextId };
+  }
+
+  function load() {
+    var stored = null;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) stored = JSON.parse(raw);
+    } catch (e) {}
+    var baseRows = (stored && Array.isArray(stored.rows) && stored.rows.length) ? stored.rows : null;
+
+    var live = readLiveData();
+    if (live) {
+      var merged = mergeLiveIntoRows(baseRows || seedData(), live.rows);
+      state.rows = merged.rows;
+      state.nextId = merged.nextId;
+      state.liveGeneratedAt = live.generatedAt;
+      return true;
+    }
+
+    if (baseRows) {
+      state.rows = baseRows;
+      state.nextId = stored.nextId || (Math.max.apply(null, baseRows.map(function (r) { return r.id; })) + 1);
+      state.liveGeneratedAt = stored.liveGeneratedAt || null;
+      return false;
+    }
+
+    state.rows = seedData();
+    state.nextId = state.rows.length + 1;
+    return false;
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows: state.rows, nextId: state.nextId, liveGeneratedAt: state.liveGeneratedAt || null }));
+    } catch (e) {}
+    var lbl = document.getElementById("last-edit");
+    if (lbl) lbl.textContent = new Date().toLocaleTimeString("pt-BR");
+  }
+
+  function total(r) { return (Number(r.backlog) || 0) + (Number(r.spa1) || 0) + (Number(r.spa2) || 0); }
+  function pending(r) { return total(r) - (Number(r.expedidas) || 0); }
+
+  function pendingTone(p) {
+    if (p <= 0) return "good";
+    if (p <= 15) return "warn";
+    return "critical";
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
+
+  function filteredRows() {
+    var q = state.search.trim().toLowerCase();
+    return state.rows.filter(function (r) {
+      if (state.filterGroup !== "TODOS" && r.grupo !== state.filterGroup) return false;
+      if (q && r.origem.toLowerCase().indexOf(q) === -1 && r.grupo.toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+
+  function renderKpis() {
+    var rows = state.rows;
+    var sum = { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 };
+    rows.forEach(function (r) {
+      sum.backlog += Number(r.backlog) || 0;
+      sum.spa1 += Number(r.spa1) || 0;
+      sum.spa2 += Number(r.spa2) || 0;
+      sum.total += total(r);
+      sum.exp += Number(r.expedidas) || 0;
+      sum.pend += pending(r);
+    });
+    var pct = sum.total > 0 ? Math.round((sum.exp / sum.total) * 1000) / 10 : 0;
+    var pendTone = pendingTone(sum.pend);
+
+    var tiles = [
+      { label: "Rotas totais", value: sum.total, sub: rows.length + " origens" },
+      { label: "Planejadas SPA1", value: sum.spa1 },
+      { label: "Planejadas SPA2", value: sum.spa2 },
+      { label: "Backlog", value: sum.backlog, tone: sum.backlog > 0 ? "warn" : "" },
+      { label: "Rotas expedidas", value: sum.exp, tone: "good" },
+      { label: "Rotas pendentes", value: sum.pend, tone: pendTone },
+      { label: "% Expedição", value: pct + "%", bar: pct }
+    ];
+
+    var html = tiles.map(function (t) {
+      var bar = (typeof t.bar === "number")
+        ? '<div class="bar"><span style="width:' + Math.min(100, Math.max(0, t.bar)) + '%; background:' + (t.bar >= 80 ? "var(--good)" : t.bar >= 50 ? "var(--warn)" : "var(--critical)") + '"></span></div>'
+        : "";
+      return '<div class="kpi">' +
+        '<div class="label">' + escapeHtml(t.label) + '</div>' +
+        '<div class="value num' + (t.tone ? " " + t.tone : "") + '">' + t.value + '</div>' +
+        (t.sub ? '<div class="sub">' + escapeHtml(t.sub) + '</div>' : "") +
+        bar +
+        '</div>';
+    }).join("");
+    document.getElementById("kpi-row").innerHTML = html;
+  }
+
+  function renderGroups() {
+    var groups = ["XPT", "SVC", "NEX", "DC"];
+    var html = groups.map(function (g) {
+      var rows = state.rows.filter(function (r) { return r.grupo === g; });
+      var pend = rows.reduce(function (a, r) { return a + pending(r); }, 0);
+      var tot = rows.reduce(function (a, r) { return a + total(r); }, 0);
+      var active = state.filterGroup === g;
+      return '<button class="group-card' + (active ? " active" : "") + '" data-group="' + g + '">' +
+        '<span class="swatch" style="background:' + CATEGORIES[g].color + '"></span>' +
+        '<span class="meta">' +
+          '<div class="name">' + g + '</div>' +
+          '<div class="count">' + rows.length + ' origens · ' + tot + ' rotas</div>' +
+        '</span>' +
+        '<span class="pending num ' + pendingTone(pend) + '" style="color:' + (pendingTone(pend) === "good" ? "var(--good)" : pendingTone(pend) === "warn" ? "var(--warn)" : "var(--critical)") + '">' + pend + '</span>' +
+      '</button>';
+    }).join("");
+    document.getElementById("group-row").innerHTML = html;
+
+    document.querySelectorAll(".group-card").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var g = btn.getAttribute("data-group");
+        state.filterGroup = state.filterGroup === g ? "TODOS" : g;
+        renderAll();
+      });
+    });
+  }
+
+  function renderTabs() {
+    var groups = ["TODOS", "XPT", "SVC", "NEX", "DC"];
+    var html = groups.map(function (g) {
+      return '<button class="' + (state.filterGroup === g ? "active" : "") + '" data-group="' + g + '">' + (g === "TODOS" ? "Todos" : g) + '</button>';
+    }).join("");
+    document.getElementById("group-tabs").innerHTML = html;
+    document.querySelectorAll("#group-tabs button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.filterGroup = btn.getAttribute("data-group");
+        renderAll();
+      });
+    });
+  }
+
+  function statusOptionsHtml(current) {
+    return STATUS_OPTIONS.map(function (s) {
+      return '<option value="' + escapeHtml(s) + '"' + (s === current ? " selected" : "") + '>' + (s === "" ? "— sem status —" : escapeHtml(s)) + '</option>';
+    }).join("");
+  }
+
+  function renderTable() {
+    var rows = filteredRows();
+    var tbody = document.getElementById("tbody");
+    var emptyState = document.getElementById("empty-state");
+
+    if (!rows.length) {
+      tbody.innerHTML = "";
+      emptyState.style.display = "block";
+    } else {
+      emptyState.style.display = "none";
+      tbody.innerHTML = rows.map(function (r) {
+        var t = total(r);
+        var p = pending(r);
+        var tone = pendingTone(p);
+        var statusTone = STATUS_TONE[r.status] || "muted";
+        return '<tr data-id="' + r.id + '" class="' + (p <= 0 ? "zero-pending" : "") + '">' +
+          '<td><button class="row-del" data-action="del" title="Remover origem">×</button></td>' +
+          '<td><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
+          '<td class="num"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
+          '<td class="num"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
+          '<td class="num"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
+          '<td class="num calc-cell">' + t + '</td>' +
+          '<td class="num"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
+          '<td class="num"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
+          '<td><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
+          '<td><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
+        '</tr>';
+      }).join("");
+    }
+
+    var sum = rows.reduce(function (a, r) {
+      a.backlog += Number(r.backlog) || 0;
+      a.spa1 += Number(r.spa1) || 0;
+      a.spa2 += Number(r.spa2) || 0;
+      a.total += total(r);
+      a.exp += Number(r.expedidas) || 0;
+      a.pend += pending(r);
+      return a;
+    }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
+
+    document.getElementById("f-count").textContent = rows.length + " origem" + (rows.length === 1 ? "" : "s");
+    document.getElementById("f-backlog").textContent = sum.backlog;
+    document.getElementById("f-spa1").textContent = sum.spa1;
+    document.getElementById("f-spa2").textContent = sum.spa2;
+    document.getElementById("f-total").textContent = sum.total;
+    document.getElementById("f-exp").textContent = sum.exp;
+    document.getElementById("f-pend").textContent = sum.pend;
+
+    bindRowEvents();
+  }
+
+  function bindRowEvents() {
+    var tbody = document.getElementById("tbody");
+    tbody.querySelectorAll("[data-field]").forEach(function (el) {
+      var evt = (el.tagName === "SELECT") ? "change" : "input";
+      el.addEventListener(evt, function () {
+        var tr = el.closest("tr");
+        var id = Number(tr.getAttribute("data-id"));
+        var row = state.rows.find(function (r) { return r.id === id; });
+        if (!row) return;
+        var field = el.getAttribute("data-field");
+        if (field === "backlog" || field === "spa1" || field === "spa2" || field === "expedidas") {
+          var v = parseInt(el.value, 10);
+          row[field] = isNaN(v) ? 0 : Math.max(0, v);
+          var t = total(row), p = pending(row);
+          tr.querySelector(".calc-cell").textContent = t;
+          var pill = tr.querySelector(".pending-pill");
+          var tone = pendingTone(p);
+          pill.className = "pending-pill " + tone;
+          pill.textContent = p;
+          tr.classList.toggle("zero-pending", p <= 0);
+          renderKpis();
+          renderGroups();
+          renderTabs();
+          updateFooter();
+        } else if (field === "status") {
+          row.status = el.value;
+          var tone2 = STATUS_TONE[row.status] || "muted";
+          el.className = "status-select s-" + tone2;
+        } else if (field === "obs") {
+          row.obs = el.value;
+        }
+        persist();
+      });
+    });
+    tbody.querySelectorAll('[data-action="del"]').forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var tr = btn.closest("tr");
+        var id = Number(tr.getAttribute("data-id"));
+        var row = state.rows.find(function (r) { return r.id === id; });
+        if (row && !confirm('Remover "' + row.origem + '" do painel?')) return;
+        state.rows = state.rows.filter(function (r) { return r.id !== id; });
+        persist();
+        renderAll();
+      });
+    });
+  }
+
+  function updateFooter() {
+    var rows = filteredRows();
+    var sum = rows.reduce(function (a, r) {
+      a.backlog += Number(r.backlog) || 0;
+      a.spa1 += Number(r.spa1) || 0;
+      a.spa2 += Number(r.spa2) || 0;
+      a.total += total(r);
+      a.exp += Number(r.expedidas) || 0;
+      a.pend += pending(r);
+      return a;
+    }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
+    document.getElementById("f-backlog").textContent = sum.backlog;
+    document.getElementById("f-spa1").textContent = sum.spa1;
+    document.getElementById("f-spa2").textContent = sum.spa2;
+    document.getElementById("f-total").textContent = sum.total;
+    document.getElementById("f-exp").textContent = sum.exp;
+    document.getElementById("f-pend").textContent = sum.pend;
+  }
+
+  function renderAll() {
+    renderKpis();
+    renderGroups();
+    renderTabs();
+    renderTable();
+  }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._h);
+    showToast._h = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+
+  function toCsv() {
+    var header = ["Grupo", "Origem", "Backlog", "Planejadas SPA1", "Planejadas SPA2", "Total", "Rotas Expedidas", "Rotas Pendentes", "Status", "Observação"];
+    var lines = [header.join(",")];
+    state.rows.forEach(function (r) {
+      var cells = [r.grupo, r.origem, r.backlog, r.spa1, r.spa2, total(r), r.expedidas, pending(r), r.status, r.obs];
+      lines.push(cells.map(function (c) {
+        var s = String(c == null ? "" : c);
+        if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }).join(","));
+    });
+    return lines.join("\r\n");
+  }
+
+  function parseCsvText(text) {
+    // Minimal RFC4180 parser: handles quoted fields, escaped quotes, commas/newlines inside quotes.
+    var rows = [];
+    var row = [];
+    var field = "";
+    var inQuotes = false;
+    var i = 0;
+    text = text.replace(/^﻿/, "");
+    while (i < text.length) {
+      var c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQuotes = true; i++; continue; }
+      if (c === ",") { row.push(field); field = ""; i++; continue; }
+      if (c === "\r") { i++; continue; }
+      if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+      field += c; i++;
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.length > 1 || (r.length === 1 && r[0] !== ""); });
+  }
+
+  function normalizeHeader(h) {
+    return String(h || "").trim().toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+
+  function importCsvFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var table = parseCsvText(String(reader.result));
+        if (!table.length) { showToast("Arquivo CSV vazio."); return; }
+        var header = table[0].map(normalizeHeader);
+        var idx = {
+          grupo: header.indexOf("grupo"),
+          origem: header.indexOf("origem"),
+          backlog: header.indexOf("backlog"),
+          spa1: header.indexOf("planejadas spa1"),
+          spa2: header.indexOf("planejadas spa2"),
+          expedidas: header.indexOf("rotas expedidas"),
+          status: header.indexOf("status"),
+          obs: header.indexOf("observacao")
+        };
+        if (idx.origem === -1) {
+          showToast('CSV inválido: coluna "Origem" não encontrada.');
+          return;
+        }
+        var imported = [];
+        for (var r = 1; r < table.length; r++) {
+          var cols = table[r];
+          var origem = (cols[idx.origem] || "").trim();
+          if (!origem) continue;
+          var grupo = (idx.grupo !== -1 ? cols[idx.grupo] : "").trim().toUpperCase();
+          if (!CATEGORIES[grupo]) grupo = "XPT";
+          imported.push({
+            id: state.nextId++,
+            grupo: grupo,
+            origem: origem,
+            backlog: Math.max(0, parseInt(cols[idx.backlog], 10) || 0),
+            spa1: Math.max(0, parseInt(cols[idx.spa1], 10) || 0),
+            spa2: Math.max(0, parseInt(cols[idx.spa2], 10) || 0),
+            expedidas: Math.max(0, parseInt(cols[idx.expedidas], 10) || 0),
+            status: idx.status !== -1 ? (cols[idx.status] || "").trim() : "",
+            obs: idx.obs !== -1 ? (cols[idx.obs] || "").trim() : ""
+          });
+        }
+        if (!imported.length) { showToast("Nenhuma linha válida encontrada no CSV."); return; }
+        if (!confirm("Importar " + imported.length + " origem(ns) do CSV? Isso substitui os dados atuais do painel.")) return;
+        state.rows = imported;
+        persist();
+        renderAll();
+        showToast(imported.length + " origem(ns) importada(s) do CSV.");
+      } catch (e) {
+        showToast("Erro ao ler o CSV: " + e.message);
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  async function exportCsv() {
+    if (!window.claude || !window.claude.downloads) {
+      showToast("Download não disponível nesta visualização.");
+      return;
+    }
+    var csv = toCsv();
+    try {
+      await window.claude.downloads.save({ filename: "expedicao_spa1_spa2.csv", data: csv });
+      showToast("CSV baixado — importe em Arquivo > Importar no Google Sheets.");
+    } catch (err) {
+      if (err && (err.code === "extension_not_enabled" || err.code === "rejected_extension")) {
+        try {
+          await window.claude.downloads.save({ filename: "expedicao_spa1_spa2.txt", data: csv });
+          showToast("Baixado como .txt (compatível) — importe no Sheets como CSV.");
+          return;
+        } catch (err2) { /* fall through */ }
+      }
+      if (err && err.code === "declined") return;
+      showToast("Não foi possível baixar o arquivo agora.");
+    }
+  }
+
+  function tick() {
+    var now = new Date();
+    document.getElementById("clock").textContent = now.toLocaleTimeString("pt-BR");
+  }
+
+  function updateAutoSyncInfo() {
+    var el = document.getElementById("auto-sync-info");
+    if (!el) return;
+    if (state.liveGeneratedAt) {
+      var d = new Date(state.liveGeneratedAt);
+      var when = isNaN(d.getTime()) ? state.liveGeneratedAt : d.toLocaleString("pt-BR");
+      el.textContent = "· Última sincronização automática: " + when;
+    } else {
+      el.textContent = "";
+    }
+  }
+
+  function init() {
+    var merged = load();
+    if (merged) persist();
+    renderAll();
+    updateAutoSyncInfo();
+    tick();
+    setInterval(tick, 1000);
+
+    document.getElementById("search").addEventListener("input", function (e) {
+      state.search = e.target.value;
+      renderTable();
+    });
+
+    document.getElementById("btn-add").addEventListener("click", function () {
+      var name = prompt("Nome da nova origem (ex: BRNPA9999):");
+      if (!name) return;
+      var group = (prompt("Grupo (XPT, SVC, NEX ou DC):", "XPT") || "XPT").toUpperCase().trim();
+      if (!CATEGORIES[group]) group = "XPT";
+      state.rows.push({ id: state.nextId++, grupo: group, origem: name.trim(), backlog: 0, spa1: 0, spa2: 0, expedidas: 0, status: "", obs: "" });
+      persist();
+      renderAll();
+      showToast('Origem "' + name.trim() + '" adicionada.');
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", function () {
+      if (!confirm("Restaurar todos os valores para o modelo original da planilha? Edições serão perdidas.")) return;
+      state.rows = seedData();
+      state.nextId = state.rows.length + 1;
+      persist();
+      renderAll();
+      showToast("Dados restaurados para o modelo original.");
+    });
+
+    document.getElementById("btn-export").addEventListener("click", exportCsv);
+
+    document.getElementById("btn-import").addEventListener("click", function () {
+      document.getElementById("file-import").click();
+    });
+    document.getElementById("file-import").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (file) importCsvFile(file);
+      e.target.value = "";
+    });
+  }
+
+  init();
+})();
+</script>
