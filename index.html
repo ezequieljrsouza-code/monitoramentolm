@@ -305,7 +305,9 @@
     border-bottom: 1px solid var(--border-strong);
     white-space: nowrap;
   }
-  thead th.num, td.num { text-align: right; }
+  thead th.num, td.num { text-align: center; }
+  thead th.center-col, td.center-col { text-align: center; }
+  thead th.col-origem, td.col-origem { white-space: nowrap; }
   tbody td {
     padding: 5px 10px;
     border-bottom: 1px solid var(--border);
@@ -317,7 +319,7 @@
 
   .cat-badge {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 700;
+    font-weight: 700;
   }
   .cat-badge .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .origin-name { font-weight: 600; }
@@ -333,7 +335,7 @@
     font-variant-numeric: tabular-nums;
   }
   td input[type="number"] { width: 62px; text-align: right; -moz-appearance: textfield; box-sizing: border-box; padding-right: 2px; }
-  td input[type="text"] { min-width: 140px; box-sizing: border-box; }
+  td input[type="text"] { min-width: 140px; box-sizing: border-box; text-align: center; }
   td input:hover { background: var(--surface-2); }
   td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
   td input[type="number"]::-webkit-outer-spin-button, td input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -488,15 +490,16 @@
       <thead>
         <tr>
           <th style="width:26px"></th>
-          <th>Origem</th>
+          <th class="col-origem">Origem</th>
           <th class="num">Backlog</th>
           <th class="num">Planejadas SPA1</th>
           <th class="num">Planejadas SPA2</th>
           <th class="num">Total</th>
           <th class="num">Expedidas</th>
           <th class="num">Pendentes</th>
-          <th>Status</th>
-          <th>Observação</th>
+          <th class="num">Impacto DIT</th>
+          <th class="center-col">Status</th>
+          <th class="center-col">Observação</th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -510,7 +513,7 @@
           <td class="num" id="f-total">0</td>
           <td class="num" id="f-exp">0</td>
           <td class="num" id="f-pend">0</td>
-          <td colspan="2"></td>
+          <td colspan="3"></td>
         </tr>
       </tfoot>
     </table>
@@ -570,7 +573,7 @@
     var rows = [];
     var id = 1;
     function add(grupo, origem, backlog, spa1, spa2, expedidas) {
-      rows.push({ id: id++, grupo: grupo, origem: origem, backlog: backlog, spa1: spa1, spa2: spa2, expedidas: expedidas, status: "", obs: "" });
+      rows.push({ id: id++, grupo: grupo, origem: origem, backlog: backlog, spa1: spa1, spa2: spa2, expedidas: expedidas, impactoDit: 0, status: "", obs: "" });
     }
     add("XPT","EPA1",0,66,0,50); add("XPT","EPA2",0,0,26,19); add("XPT","EPA3",0,0,59,38);
     add("XPT","EPA4",0,0,68,53); add("XPT","EPA5",5,0,34,37); add("XPT","EPA6",0,0,26,20);
@@ -613,10 +616,16 @@
 
   var firebaseSyncInFlight = false;
 
-  // Busca o snapshot mais recente gravado pelo Atualizador no Firebase e
-  // mescla nas origens (preservando Backlog/Status/Observação manuais), do
-  // mesmo jeito que o bloco live-data local — só que sem precisar reabrir o
-  // painel: roda em segundo plano em qualquer aba aberta.
+  // Chave segura pro Firebase (não aceita . # $ [ ] / em nomes de nó).
+  function firebaseSafeKey(s) {
+    return encodeURIComponent(String(s)).replace(/\./g, "%2E");
+  }
+
+  // Busca o snapshot mais recente gravado pelo Atualizador (spa1/spa2/expedidas,
+  // em /latest.json — o executável NUNCA grava em /manual, só o painel escreve
+  // ali) e também os campos manuais (Backlog/Status/Observação/Impacto DIT)
+  // gravados por qualquer pessoa que tenha editado a tabela, em /manual.json.
+  // Roda em segundo plano em qualquer aba aberta, sem precisar reabrir o painel.
   async function syncFromFirebase(manual) {
     if (firebaseSyncInFlight) return;
     firebaseSyncInFlight = true;
@@ -625,18 +634,37 @@
       var res = await fetch(FIREBASE_URL + "/latest.json", { cache: "no-store" });
       if (!res.ok) throw new Error("HTTP " + res.status);
       var data = await res.json();
-      if (!data || !Array.isArray(data.rows) || !data.rows.length) {
-        if (manual) showToast("Nenhum dado disponível no Firebase ainda.");
+
+      var manualByKey = {};
+      try {
+        var resManual = await fetch(FIREBASE_URL + "/manual.json", { cache: "no-store" });
+        if (resManual.ok) {
+          var manualData = await resManual.json();
+          if (manualData) {
+            Object.keys(manualData).forEach(function (k) {
+              var m = manualData[k];
+              if (m && m.grupo && m.origem) manualByKey[m.grupo + "||" + m.origem] = m;
+            });
+          }
+        }
+      } catch (eManual) { /* segue sem dados manuais remotos se falhar */ }
+
+      var houveDadosAutomaticos = data && Array.isArray(data.rows) && data.rows.length;
+      var mudouAutomatico = houveDadosAutomaticos && data.generatedAt !== state.liveGeneratedAt;
+      var houveDadosManuais = Object.keys(manualByKey).length > 0;
+
+      if (!mudouAutomatico && !houveDadosManuais) {
+        if (manual) showToast(houveDadosAutomaticos ? "Já está atualizado (última sincronização: " + new Date(data.generatedAt).toLocaleString("pt-BR") + ")." : "Nenhum dado disponível no Firebase ainda.");
         return;
       }
-      if (data.generatedAt === state.liveGeneratedAt) {
-        if (manual) showToast("Já está atualizado (última sincronização: " + new Date(data.generatedAt).toLocaleString("pt-BR") + ").");
-        return;
-      }
-      var merged = mergeLiveIntoRows(state.rows, data.rows);
+
+      var liveRows = houveDadosAutomaticos ? data.rows : state.rows.map(function (r) {
+        return { grupo: r.grupo, origem: r.origem, spa1: r.spa1, spa2: r.spa2, expedidas: r.expedidas };
+      });
+      var merged = mergeLiveIntoRows(state.rows, liveRows, manualByKey);
       state.rows = merged.rows;
       state.nextId = merged.nextId;
-      state.liveGeneratedAt = data.generatedAt;
+      if (mudouAutomatico) state.liveGeneratedAt = data.generatedAt;
       persist();
       renderAll();
       updateAutoSyncInfo();
@@ -648,10 +676,36 @@
     }
   }
 
+  var manualPushTimers = {};
+
+  // Grava os campos manuais de UMA origem no Firebase (debounced — espera a
+  // pessoa parar de digitar), pra quem mais estiver com o painel aberto
+  // receber essa edição no próximo ciclo de sincronização (a cada 60s, ou
+  // na hora se a pessoa clicar em "Sincronizar").
+  function pushManualField(row) {
+    var key = row.grupo + "||" + row.origem;
+    clearTimeout(manualPushTimers[key]);
+    manualPushTimers[key] = setTimeout(function () {
+      var payload = {
+        grupo: row.grupo, origem: row.origem,
+        backlog: row.backlog, status: row.status, obs: row.obs, impactoDit: row.impactoDit,
+        updatedAt: new Date().toISOString()
+      };
+      fetch(FIREBASE_URL + "/manual/" + firebaseSafeKey(key) + ".json", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(function () { /* falha silenciosa: edição já está salva localmente */ });
+    }, 700);
+  }
+
   // Combina as origens extraídas automaticamente (spa1/spa2/expedidas) com os
-  // campos preenchidos manualmente na operação (backlog/status/observação),
-  // que nunca são sobrescritos pela automação.
-  function mergeLiveIntoRows(existingRows, liveRows) {
+  // campos preenchidos manualmente na operação (backlog/status/observação/
+  // impacto DIT). Se vier um valor manual remoto (manualByKey, gravado por
+  // outra pessoa no Firebase) ele tem prioridade sobre o que já está salvo só
+  // neste navegador — assim as edições manuais também ficam compartilhadas.
+  function mergeLiveIntoRows(existingRows, liveRows, manualByKey) {
+    manualByKey = manualByKey || {};
     var byKey = {};
     existingRows.forEach(function (r) { byKey[r.grupo + "||" + r.origem] = r; });
     var seen = {};
@@ -660,24 +714,34 @@
       var key = lr.grupo + "||" + lr.origem;
       seen[key] = true;
       var prev = byKey[key];
+      var man = manualByKey[key];
       return {
         id: prev ? prev.id : nextId++,
         grupo: lr.grupo,
         origem: lr.origem,
-        backlog: prev ? prev.backlog : 0,
+        backlog: man ? man.backlog : (prev ? prev.backlog : 0),
         spa1: lr.spa1 || 0,
         spa2: lr.spa2 || 0,
         expedidas: lr.expedidas || 0,
-        status: prev ? prev.status : "",
-        obs: prev ? prev.obs : ""
+        impactoDit: man ? man.impactoDit : (prev ? prev.impactoDit : 0),
+        status: man ? man.status : (prev ? prev.status : ""),
+        obs: man ? man.obs : (prev ? prev.obs : "")
       };
     });
     existingRows.forEach(function (r) {
       var key = r.grupo + "||" + r.origem;
       if (!seen[key]) {
+        var man = manualByKey[key];
         // Origem não apareceu na última coleta (sem rotas ativas): mantém os
-        // campos manuais e zera as contagens, sem excluir a linha.
-        merged.push({ id: r.id, grupo: r.grupo, origem: r.origem, backlog: r.backlog, spa1: 0, spa2: 0, expedidas: 0, status: r.status, obs: r.obs });
+        // campos manuais (priorizando o remoto, se houver) e zera as
+        // contagens automáticas, sem excluir a linha.
+        merged.push({
+          id: r.id, grupo: r.grupo, origem: r.origem, spa1: 0, spa2: 0, expedidas: 0,
+          backlog: man ? man.backlog : r.backlog,
+          impactoDit: man ? man.impactoDit : r.impactoDit,
+          status: man ? man.status : r.status,
+          obs: man ? man.obs : r.obs
+        });
       }
     });
     return { rows: merged, nextId: nextId };
@@ -856,15 +920,16 @@
         var statusTone = STATUS_TONE[r.status] || "muted";
         return '<tr data-id="' + r.id + '" class="' + (p <= 0 ? "zero-pending" : "") + '">' +
           '<td><button class="row-del" data-action="del" title="Remover origem">×</button></td>' +
-          '<td><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
+          '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
           '<td class="num"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
           '<td class="num"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
           '<td class="num"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
           '<td class="num calc-cell">' + t + '</td>' +
           '<td class="num"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
           '<td class="num"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
-          '<td><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
-          '<td><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
+          '<td class="num"><input type="number" min="0" data-field="impactoDit" value="' + r.impactoDit + '"></td>' +
+          '<td class="center-col"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
+          '<td class="center-col"><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
         '</tr>';
       }).join("");
     }
@@ -880,12 +945,12 @@
     }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
 
     document.getElementById("f-count").textContent = rows.length + " origem" + (rows.length === 1 ? "" : "s");
-    document.getElementById("f-backlog").textContent = sum.backlog;
-    document.getElementById("f-spa1").textContent = sum.spa1;
-    document.getElementById("f-spa2").textContent = sum.spa2;
-    document.getElementById("f-total").textContent = sum.total;
-    document.getElementById("f-exp").textContent = sum.exp;
-    document.getElementById("f-pend").textContent = sum.pend;
+    document.getElementById("f-backlog").textContent = fmtMilhar(sum.backlog);
+    document.getElementById("f-spa1").textContent = fmtMilhar(sum.spa1);
+    document.getElementById("f-spa2").textContent = fmtMilhar(sum.spa2);
+    document.getElementById("f-total").textContent = fmtMilhar(sum.total);
+    document.getElementById("f-exp").textContent = fmtMilhar(sum.exp);
+    document.getElementById("f-pend").textContent = fmtMilhar(sum.pend);
 
     bindRowEvents();
   }
@@ -914,12 +979,19 @@
           renderGroups();
           renderTabs();
           updateFooter();
+          if (field === "backlog") pushManualField(row);
         } else if (field === "status") {
           row.status = el.value;
           var tone2 = STATUS_TONE[row.status] || "muted";
           el.className = "status-select s-" + tone2;
+          pushManualField(row);
         } else if (field === "obs") {
           row.obs = el.value;
+          pushManualField(row);
+        } else if (field === "impactoDit") {
+          var vDit = parseInt(el.value, 10);
+          row.impactoDit = isNaN(vDit) ? 0 : Math.max(0, vDit);
+          pushManualField(row);
         }
         persist();
       });
@@ -948,12 +1020,12 @@
       a.pend += pending(r);
       return a;
     }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
-    document.getElementById("f-backlog").textContent = sum.backlog;
-    document.getElementById("f-spa1").textContent = sum.spa1;
-    document.getElementById("f-spa2").textContent = sum.spa2;
-    document.getElementById("f-total").textContent = sum.total;
-    document.getElementById("f-exp").textContent = sum.exp;
-    document.getElementById("f-pend").textContent = sum.pend;
+    document.getElementById("f-backlog").textContent = fmtMilhar(sum.backlog);
+    document.getElementById("f-spa1").textContent = fmtMilhar(sum.spa1);
+    document.getElementById("f-spa2").textContent = fmtMilhar(sum.spa2);
+    document.getElementById("f-total").textContent = fmtMilhar(sum.total);
+    document.getElementById("f-exp").textContent = fmtMilhar(sum.exp);
+    document.getElementById("f-pend").textContent = fmtMilhar(sum.pend);
   }
 
   function renderAll() {
@@ -972,10 +1044,10 @@
   }
 
   function toCsv() {
-    var header = ["Grupo", "Origem", "Backlog", "Planejadas SPA1", "Planejadas SPA2", "Total", "Rotas Expedidas", "Rotas Pendentes", "Status", "Observação"];
+    var header = ["Grupo", "Origem", "Backlog", "Planejadas SPA1", "Planejadas SPA2", "Total", "Rotas Expedidas", "Rotas Pendentes", "Impacto DIT", "Status", "Observação"];
     var lines = [header.join(",")];
     state.rows.forEach(function (r) {
-      var cells = [r.grupo, r.origem, r.backlog, r.spa1, r.spa2, total(r), r.expedidas, pending(r), r.status, r.obs];
+      var cells = [r.grupo, r.origem, r.backlog, r.spa1, r.spa2, total(r), r.expedidas, pending(r), r.impactoDit, r.status, r.obs];
       lines.push(cells.map(function (c) {
         var s = String(c == null ? "" : c);
         if (/[",\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
@@ -1031,6 +1103,7 @@
           spa1: header.indexOf("planejadas spa1"),
           spa2: header.indexOf("planejadas spa2"),
           expedidas: header.indexOf("rotas expedidas"),
+          impactoDit: header.indexOf("impacto dit"),
           status: header.indexOf("status"),
           obs: header.indexOf("observacao")
         };
@@ -1053,6 +1126,7 @@
             spa1: Math.max(0, parseInt(cols[idx.spa1], 10) || 0),
             spa2: Math.max(0, parseInt(cols[idx.spa2], 10) || 0),
             expedidas: Math.max(0, parseInt(cols[idx.expedidas], 10) || 0),
+            impactoDit: idx.impactoDit !== -1 ? Math.max(0, parseInt(cols[idx.impactoDit], 10) || 0) : 0,
             status: idx.status !== -1 ? (cols[idx.status] || "").trim() : "",
             obs: idx.obs !== -1 ? (cols[idx.obs] || "").trim() : ""
           });
@@ -1257,6 +1331,7 @@
       { key: "total", label: "Total", w: 74, num: true },
       { key: "exp", label: "Expedidas", w: 84, num: true },
       { key: "pend", label: "Pendentes", w: 90, num: true },
+      { key: "impactoDit", label: "Impacto DIT", w: 100, num: true },
       { key: "status", label: "Status", w: 160 },
       { key: "obs", label: "Observação", w: 0 } // preenche o restante
     ];
@@ -1329,22 +1404,29 @@
       // Pendentes pill
       capDrawPill(ctx, String(p), colX[6] + cols[6].w - 10, ry + (rowH - 22) / 2, pendingTone(p), "right");
 
+      // Impacto DIT
+      ctx.fillStyle = CAP.text;
+      ctx.font = "700 12.5px " + CAP.fontFamily;
+      ctx.textAlign = "right";
+      ctx.fillText(String(r.impactoDit || 0), colX[7] + cols[7].w - 10, midY);
+      ctx.textAlign = "left";
+
       // Status
       if (r.status) {
         var statusTone = STATUS_TONE[r.status] || "muted";
         ctx.font = "700 10.5px " + CAP.fontFamily;
-        var maxStatusW = cols[7].w - 20;
-        capDrawPill(ctx, capTruncate(ctx, r.status, maxStatusW), colX[7] + 10, ry + (rowH - 22) / 2, statusTone, "left");
+        var maxStatusW = cols[8].w - 20;
+        capDrawPill(ctx, capTruncate(ctx, r.status, maxStatusW), colX[8] + 10, ry + (rowH - 22) / 2, statusTone, "left");
       } else {
         ctx.fillStyle = CAP.textFaint;
         ctx.font = "12px " + CAP.fontFamily;
-        ctx.fillText("— sem status —", colX[7] + 10, midY);
+        ctx.fillText("— sem status —", colX[8] + 10, midY);
       }
 
       // Observação
       ctx.fillStyle = CAP.text;
       ctx.font = "12px " + CAP.fontFamily;
-      ctx.fillText(capTruncate(ctx, r.obs, cols[8].w - 20), colX[8] + 10, midY);
+      ctx.fillText(capTruncate(ctx, r.obs, cols[9].w - 20), colX[9] + 10, midY);
 
       ry += rowH;
     });
@@ -1459,7 +1541,7 @@
       if (!name) return;
       var group = (prompt("Grupo (XPT, SVC, NEX ou DC):", "XPT") || "XPT").toUpperCase().trim();
       if (!CATEGORIES[group]) group = "XPT";
-      state.rows.push({ id: state.nextId++, grupo: group, origem: name.trim(), backlog: 0, spa1: 0, spa2: 0, expedidas: 0, status: "", obs: "" });
+      state.rows.push({ id: state.nextId++, grupo: group, origem: name.trim(), backlog: 0, spa1: 0, spa2: 0, expedidas: 0, impactoDit: 0, status: "", obs: "" });
       persist();
       renderAll();
       showToast('Origem "' + name.trim() + '" adicionada.');
