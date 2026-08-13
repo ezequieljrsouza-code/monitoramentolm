@@ -136,6 +136,7 @@
     padding: 12px 14px;
     box-shadow: var(--shadow);
     min-width: 0;
+    text-align: center;
   }
   .kpi .label {
     font-size: 11px;
@@ -1250,7 +1251,7 @@
     var tw = ctx.measureText(text).width;
     var padX = 10, h = 22;
     var w = tw + padX * 2;
-    var boxX = align === "right" ? x - w : x;
+    var boxX = align === "right" ? x - w : align === "center" ? x - w / 2 : x;
     var colors = capToneColors(tone);
     ctx.fillStyle = colors.bg;
     capRoundRect(ctx, boxX, y, w, h, h / 2);
@@ -1299,12 +1300,14 @@
       ctx.lineWidth = 1;
       capRoundRect(ctx, tx, y, tileW, tileH, 10);
       ctx.fill(); ctx.stroke();
+      ctx.textAlign = "center";
       ctx.fillStyle = CAP.textFaint;
       ctx.font = "700 10.5px " + CAP.fontFamily;
-      ctx.fillText(t.label.toUpperCase(), tx + 14, y + 26);
+      ctx.fillText(t.label.toUpperCase(), tx + tileW / 2, y + 26);
       ctx.fillStyle = t.tone ? capToneColors(t.tone).fg : CAP.text;
       ctx.font = "800 23px " + CAP.fontFamily;
-      ctx.fillText(t.value, tx + 14, y + 58);
+      ctx.fillText(t.value, tx + tileW / 2, y + 58);
+      ctx.textAlign = "left";
     });
     y += tileH + 12;
 
@@ -1376,8 +1379,10 @@
     ctx.fillStyle = CAP.brandInk;
     ctx.font = "700 10.5px " + CAP.fontFamily;
     cols.forEach(function (c, i) {
-      ctx.textAlign = c.num ? "right" : "left";
-      var tx = c.num ? colX[i] + c.w - 10 : colX[i] + 10;
+      // Origem fica à esquerda (igual à tela); todas as outras colunas
+      // centralizadas sob seus valores, no mesmo padrão da tabela na tela.
+      ctx.textAlign = i === 0 ? "left" : "center";
+      var tx = i === 0 ? colX[i] + 10 : colX[i] + c.w / 2;
       ctx.fillText(c.label.toUpperCase(), tx, tableTop + headH / 2 + 4);
     });
     ctx.textAlign = "left";
@@ -1405,27 +1410,26 @@
       var nameMaxW = cols[0].w - (11 + grupoW + 18);
       ctx.fillText(capTruncate(ctx, r.origem, nameMaxW), ox + 11 + grupoW + 8, midY);
 
-      // Numeric columns
+      // Numeric columns — centralizadas sob o cabeçalho, igual à tela
       ctx.font = "700 12.5px " + CAP.fontFamily;
       ctx.fillStyle = CAP.text;
+      ctx.textAlign = "center";
       ["backlog", "spa1", "spa2"].forEach(function (key, i) {
         var ci = i + 1;
-        ctx.textAlign = "right";
-        ctx.fillText(String(r[key]), colX[ci] + cols[ci].w - 10, midY);
+        ctx.fillText(String(r[key]), colX[ci] + cols[ci].w / 2, midY);
       });
-      ctx.textAlign = "right";
-      ctx.fillText(String(t), colX[4] + cols[4].w - 10, midY);
-      ctx.fillText(String(r.expedidas), colX[5] + cols[5].w - 10, midY);
+      ctx.fillText(String(t), colX[4] + cols[4].w / 2, midY);
+      ctx.fillText(String(r.expedidas), colX[5] + cols[5].w / 2, midY);
       ctx.textAlign = "left";
 
       // Pendentes pill
-      capDrawPill(ctx, String(p), colX[6] + cols[6].w - 10, ry + (rowH - 22) / 2, pendingTone(p), "right");
+      capDrawPill(ctx, String(p), colX[6] + cols[6].w / 2, ry + (rowH - 22) / 2, pendingTone(p), "center");
 
       // Impacto DIT
       ctx.fillStyle = CAP.text;
       ctx.font = "700 12.5px " + CAP.fontFamily;
-      ctx.textAlign = "right";
-      ctx.fillText(String(r.impactoDit || 0), colX[7] + cols[7].w - 10, midY);
+      ctx.textAlign = "center";
+      ctx.fillText(String(r.impactoDit || 0), colX[7] + cols[7].w / 2, midY);
       ctx.textAlign = "left";
 
       // Status
@@ -1433,17 +1437,21 @@
         var statusTone = STATUS_TONE[r.status] || "muted";
         ctx.font = "700 10.5px " + CAP.fontFamily;
         var maxStatusW = cols[8].w - 20;
-        capDrawPill(ctx, capTruncate(ctx, r.status, maxStatusW), colX[8] + 10, ry + (rowH - 22) / 2, statusTone, "left");
+        capDrawPill(ctx, capTruncate(ctx, r.status, maxStatusW), colX[8] + cols[8].w / 2, ry + (rowH - 22) / 2, statusTone, "center");
       } else {
         ctx.fillStyle = CAP.textFaint;
         ctx.font = "12px " + CAP.fontFamily;
-        ctx.fillText("— sem status —", colX[8] + 10, midY);
+        ctx.textAlign = "center";
+        ctx.fillText("— sem status —", colX[8] + cols[8].w / 2, midY);
+        ctx.textAlign = "left";
       }
 
       // Observação
       ctx.fillStyle = CAP.text;
       ctx.font = "12px " + CAP.fontFamily;
-      ctx.fillText(capTruncate(ctx, r.obs, cols[9].w - 20), colX[9] + 10, midY);
+      ctx.textAlign = "center";
+      ctx.fillText(capTruncate(ctx, r.obs, cols[9].w - 20), colX[9] + cols[9].w / 2, midY);
+      ctx.textAlign = "left";
 
       ry += rowH;
     });
@@ -1459,13 +1467,13 @@
     ctx.fillStyle = CAP.brandInk;
     ctx.font = "800 12px " + CAP.fontFamily;
     ctx.fillText(pendentesRows.length + " origem" + (pendentesRows.length === 1 ? "" : "s"), colX[0] + 10, ry + footH / 2 + 4);
-    ctx.textAlign = "right";
-    ctx.fillText(String(sumP.backlog), colX[1] + cols[1].w - 10, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.spa1), colX[2] + cols[2].w - 10, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.spa2), colX[3] + cols[3].w - 10, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.total), colX[4] + cols[4].w - 10, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.exp), colX[5] + cols[5].w - 10, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.pend), colX[6] + cols[6].w - 10, ry + footH / 2 + 4);
+    ctx.textAlign = "center";
+    ctx.fillText(String(sumP.backlog), colX[1] + cols[1].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sumP.spa1), colX[2] + cols[2].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sumP.spa2), colX[3] + cols[3].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sumP.total), colX[4] + cols[4].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sumP.exp), colX[5] + cols[5].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sumP.pend), colX[6] + cols[6].w / 2, ry + footH / 2 + 4);
     ctx.textAlign = "left";
 
     y = tableTop + tableH + PAD;
