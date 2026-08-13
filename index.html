@@ -308,6 +308,7 @@
   thead th.num, td.num { text-align: center; }
   thead th.center-col, td.center-col { text-align: center; }
   thead th.col-origem, td.col-origem { white-space: nowrap; }
+  thead th.col-origem { text-align: center; }
   tbody td {
     padding: 5px 10px;
     border-bottom: 1px solid var(--border);
@@ -318,11 +319,11 @@
   tbody tr.zero-pending:hover td { background: var(--good-soft); }
 
   .cat-badge {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; vertical-align: middle; gap: 6px;
     font-weight: 700;
   }
   .cat-badge .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .origin-name { font-weight: 600; }
+  .origin-name { font-weight: 600; vertical-align: middle; }
 
   td input[type="number"], td input[type="text"] {
     width: 100%;
@@ -334,7 +335,7 @@
     border-radius: 6px;
     font-variant-numeric: tabular-nums;
   }
-  td input[type="number"] { width: 62px; text-align: right; -moz-appearance: textfield; box-sizing: border-box; padding-right: 2px; }
+  td input[type="number"] { width: 62px; text-align: center; -moz-appearance: textfield; box-sizing: border-box; }
   td input[type="text"] { min-width: 140px; box-sizing: border-box; text-align: center; }
   td input:hover { background: var(--surface-2); }
   td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
@@ -352,9 +353,11 @@
 
   select.status-select {
     font: inherit; font-weight: 700; font-size: 11.5px;
+    text-align: center;
+    text-align-last: center;
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 5px 24px 5px 10px;
+    padding: 5px 22px 5px 22px;
     cursor: pointer;
     appearance: none;
     background-repeat: no-repeat;
@@ -731,6 +734,7 @@
     existingRows.forEach(function (r) {
       var key = r.grupo + "||" + r.origem;
       if (!seen[key]) {
+        seen[key] = true;
         var man = manualByKey[key];
         // Origem não apareceu na última coleta (sem rotas ativas): mantém os
         // campos manuais (priorizando o remoto, se houver) e zera as
@@ -743,6 +747,19 @@
           obs: man ? man.obs : r.obs
         });
       }
+    });
+    // Origem criada manualmente por outra pessoa (ex.: botão "+ Adicionar
+    // origem") que ainda não existe neste navegador nem na coleta automática:
+    // cria a linha aqui também, pra ficar igual pra todo mundo.
+    Object.keys(manualByKey).forEach(function (key) {
+      if (seen[key]) return;
+      seen[key] = true;
+      var man = manualByKey[key];
+      merged.push({
+        id: nextId++, grupo: man.grupo, origem: man.origem, spa1: 0, spa2: 0, expedidas: 0,
+        backlog: man.backlog || 0, impactoDit: man.impactoDit || 0,
+        status: man.status || "", obs: man.obs || ""
+      });
     });
     return { rows: merged, nextId: nextId };
   }
@@ -1541,9 +1558,11 @@
       if (!name) return;
       var group = (prompt("Grupo (XPT, SVC, NEX ou DC):", "XPT") || "XPT").toUpperCase().trim();
       if (!CATEGORIES[group]) group = "XPT";
-      state.rows.push({ id: state.nextId++, grupo: group, origem: name.trim(), backlog: 0, spa1: 0, spa2: 0, expedidas: 0, impactoDit: 0, status: "", obs: "" });
+      var novaOrigem = { id: state.nextId++, grupo: group, origem: name.trim(), backlog: 0, spa1: 0, spa2: 0, expedidas: 0, impactoDit: 0, status: "", obs: "" };
+      state.rows.push(novaOrigem);
       persist();
       renderAll();
+      pushManualField(novaOrigem);
       showToast('Origem "' + name.trim() + '" adicionada.');
     });
 
