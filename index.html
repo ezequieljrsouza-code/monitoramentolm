@@ -131,6 +131,7 @@
   .kpi {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
     border-radius: var(--radius);
     padding: 12px 14px;
     box-shadow: var(--shadow);
@@ -757,6 +758,10 @@
     return sum;
   }
 
+  function fmtMilhar(n) {
+    return Number(n || 0).toLocaleString("pt-BR");
+  }
+
   function renderKpis() {
     var rows = state.rows;
     var sum = summarize(rows);
@@ -764,12 +769,12 @@
     var pendTone = pendingTone(sum.pend);
 
     var tiles = [
-      { label: "Rotas totais", value: sum.total, sub: rows.length + " origens" },
-      { label: "Planejadas SPA1", value: sum.spa1 },
-      { label: "Planejadas SPA2", value: sum.spa2 },
-      { label: "Backlog", value: sum.backlog, tone: sum.backlog > 0 ? "warn" : "" },
-      { label: "Rotas expedidas", value: sum.exp, tone: "good" },
-      { label: "Rotas pendentes", value: sum.pend, tone: pendTone },
+      { label: "Rotas totais", value: fmtMilhar(sum.total), sub: rows.length + " origens" },
+      { label: "Planejadas SPA1", value: fmtMilhar(sum.spa1) },
+      { label: "Planejadas SPA2", value: fmtMilhar(sum.spa2) },
+      { label: "Backlog", value: fmtMilhar(sum.backlog), tone: sum.backlog > 0 ? "warn" : "" },
+      { label: "Rotas expedidas", value: fmtMilhar(sum.exp), tone: "good" },
+      { label: "Rotas pendentes", value: fmtMilhar(sum.pend), tone: pendTone },
       { label: "% Expedição", value: pct + "%", bar: pct }
     ];
 
