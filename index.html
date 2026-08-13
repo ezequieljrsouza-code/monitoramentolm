@@ -2,6 +2,7 @@
 <title>Expedição SPA1 · SPA2</title>
 <style>
   :root {
+    color-scheme: light;
     --bg: #faf9f4;
     --surface: #ffffff;
     --surface-2: #f2f0e6;
@@ -35,74 +36,9 @@
     --focus: #26297e;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #15151a;
-      --surface: #1c1c23;
-      --surface-2: #232430;
-      --surface-3: #2c2d3a;
-      --border: #34354420;
-      --border: #383a49;
-      --border-strong: #4b4d60;
-      --text: #eeeef2;
-      --text-muted: #a6a6b8;
-      --text-faint: #7d7d90;
-      --accent: #9a9df0;
-      --accent-strong: #b6b9ff;
-      --accent-soft: #2b2d5c;
-      --brand: #ffe600;
-      --brand-ink: #3a3300;
-      --good: #4fce9a;
-      --good-soft: #133a2b;
-      --warn: #e8b158;
-      --warn-soft: #43350f;
-      --critical: #ef8478;
-      --critical-soft: #4a221e;
-      --info: #7db2ec;
-      --info-soft: #1c3350;
-      --muted-chip: #a6a6b8;
-      --muted-chip-soft: #2c2d3a;
-      --cat-xpt: #7fa8e0;
-      --cat-svc: #bd9be5;
-      --cat-nex: #5fc9bb;
-      --cat-dc: #e0a565;
-      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-      --focus: #b6b9ff;
-    }
-  }
-
-  :root[data-theme="dark"] {
-    --bg: #15151a;
-    --surface: #1c1c23;
-    --surface-2: #232430;
-    --surface-3: #2c2d3a;
-    --border: #383a49;
-    --border-strong: #4b4d60;
-    --text: #eeeef2;
-    --text-muted: #a6a6b8;
-    --text-faint: #7d7d90;
-    --accent: #9a9df0;
-    --accent-strong: #b6b9ff;
-    --accent-soft: #2b2d5c;
-    --brand: #ffe600;
-    --brand-ink: #3a3300;
-    --good: #4fce9a;
-    --good-soft: #133a2b;
-    --warn: #e8b158;
-    --warn-soft: #43350f;
-    --critical: #ef8478;
-    --critical-soft: #4a221e;
-    --info: #7db2ec;
-    --info-soft: #1c3350;
-    --muted-chip: #a6a6b8;
-    --muted-chip-soft: #2c2d3a;
-    --cat-xpt: #7fa8e0;
-    --cat-svc: #bd9be5;
-    --cat-nex: #5fc9bb;
-    --cat-dc: #e0a565;
-    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
-    --focus: #b6b9ff;
-  }
+  /* Painel fixo em modo claro sempre — de propósito, sem bloco de modo escuro
+     (nem por @media prefers-color-scheme, nem por [data-theme="dark"]), para
+     não mudar de cor conforme o tema do navegador/SO do usuário. */
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
