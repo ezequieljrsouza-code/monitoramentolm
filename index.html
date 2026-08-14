@@ -1,4 +1,5 @@
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Expedição SPA1 · SPA2</title>
 <style>
   :root {
@@ -424,6 +425,31 @@
   @media (max-width: 1000px) {
     .kpi-row { grid-template-columns: repeat(3, 1fr); }
     .group-row { grid-template-columns: repeat(2, 1fr); }
+    /* Abaixo de 1000px a tabela (min-width: 1180px) não cabe mais na tela —
+       em vez de deixar a página inteira rolar na horizontal, o scroll (X e Y)
+       fica contido dentro do próprio card da tabela, e o cabeçalho continua
+       "grudado" no topo enquanto rola dentro dele. */
+    .table-wrap {
+      overflow: auto;
+      max-height: 75vh;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  @media (max-width: 600px) {
+    html, body { overflow-x: hidden; }
+    .topbar { padding: 8px 14px; flex-wrap: wrap; row-gap: 4px; }
+    .topbar .brand-logo { height: 18px; }
+    header.page { padding: 16px 14px 4px; }
+    header.page h1 { font-size: 19px; }
+    main { padding: 12px 14px 40px; gap: 14px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .kpi { padding: 10px 10px; }
+    .kpi .value { font-size: 20px; }
+    .toolbar { gap: 8px; }
+    .toolbar .search { min-width: 0; max-width: none; flex: 1 1 100%; }
+    .tabs { flex: 1 1 100%; justify-content: center; }
+    footer.note { padding: 0 14px 30px; flex-direction: column; gap: 4px; }
   }
 
   @media print {
@@ -526,7 +552,7 @@
 </main>
 
 <footer class="note">
-  <span> Desenvolvido por: Ezequiel Miranda <span id="auto-sync-info"></span></span>
+  <span>Modelo baseado em Expedição_SPA1_SPA2.xlsx · valores editáveis salvos neste navegador. <span id="auto-sync-info"></span></span>
   <span>Última edição: <span id="last-edit">—</span></span>
 </footer>
 
