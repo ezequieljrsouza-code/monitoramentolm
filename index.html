@@ -311,6 +311,10 @@
   thead th.center-col, td.center-col { text-align: center; }
   thead th.col-origem, td.col-origem { white-space: nowrap; }
   thead th.col-origem { text-align: center; }
+  thead th[data-sort] { cursor: pointer; user-select: none; }
+  thead th[data-sort]:hover { background: color-mix(in srgb, var(--brand) 80%, black 12%); }
+  thead th[data-sort] .sort-arrow { display: inline-block; width: 9px; margin-left: 3px; opacity: 0.35; }
+  thead th[data-sort].sort-active .sort-arrow { opacity: 1; }
   tbody td {
     padding: 5px 10px;
     border-bottom: 1px solid var(--border);
@@ -580,16 +584,16 @@
       <thead>
         <tr>
           <th style="width:26px"></th>
-          <th class="col-origem">Origem</th>
-          <th class="num">Backlog</th>
-          <th class="num">Planejadas SPA1</th>
-          <th class="num">Planejadas SPA2</th>
-          <th class="num">Total</th>
-          <th class="num">Expedidas</th>
-          <th class="num">Pendentes</th>
-          <th class="num">Impacto DIT</th>
-          <th class="center-col">Status</th>
-          <th class="center-col">Observação</th>
+          <th class="col-origem" data-sort="origem">Origem<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="backlog">Backlog<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="spa1">Planejadas SPA1<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="spa2">Planejadas SPA2<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="total">Total<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="expedidas">Expedidas<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="pending">Pendentes<span class="sort-arrow"></span></th>
+          <th class="num" data-sort="impactoDit">Impacto DIT<span class="sort-arrow"></span></th>
+          <th class="center-col" data-sort="status">Status<span class="sort-arrow"></span></th>
+          <th class="center-col" data-sort="obs">Observação<span class="sort-arrow"></span></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -691,7 +695,22 @@
     filterGroup: "TODOS",
     search: "",
     hideZeroPending: false,
-    nextId: 1
+    nextId: 1,
+    sortField: null,
+    sortDir: 1
+  };
+
+  var SORT_VALUE_GETTERS = {
+    origem: function (r) { return r.origem.toLowerCase(); },
+    backlog: function (r) { return Number(r.backlog) || 0; },
+    spa1: function (r) { return Number(r.spa1) || 0; },
+    spa2: function (r) { return Number(r.spa2) || 0; },
+    total: function (r) { return total(r); },
+    expedidas: function (r) { return Number(r.expedidas) || 0; },
+    pending: function (r) { return pending(r); },
+    impactoDit: function (r) { return Number(r.impactoDit) || 0; },
+    status: function (r) { return r.status.toLowerCase(); },
+    obs: function (r) { return r.obs.toLowerCase(); }
   };
 
   function readLiveData() {
@@ -905,12 +924,23 @@
 
   function filteredRows() {
     var q = state.search.trim().toLowerCase();
-    return state.rows.filter(function (r) {
+    var rows = state.rows.filter(function (r) {
       if (state.filterGroup !== "TODOS" && r.grupo !== state.filterGroup) return false;
       if (q && r.origem.toLowerCase().indexOf(q) === -1 && r.grupo.toLowerCase().indexOf(q) === -1) return false;
       if (state.hideZeroPending && pending(r) <= 0) return false;
       return true;
     });
+    if (state.sortField) {
+      var getValue = SORT_VALUE_GETTERS[state.sortField];
+      var dir = state.sortDir;
+      rows = rows.slice().sort(function (a, b) {
+        var va = getValue(a), vb = getValue(b);
+        if (va < vb) return -1 * dir;
+        if (va > vb) return 1 * dir;
+        return a.origem.localeCompare(b.origem);
+      });
+    }
+    return rows;
   }
 
   function summarize(rows) {
@@ -1056,7 +1086,37 @@
     document.getElementById("f-exp").textContent = fmtMilhar(sum.exp);
     document.getElementById("f-pend").textContent = fmtMilhar(sum.pend);
 
+    renderSortIndicators();
     bindRowEvents();
+  }
+
+  function renderSortIndicators() {
+    document.querySelectorAll("thead th[data-sort]").forEach(function (th) {
+      var field = th.getAttribute("data-sort");
+      var arrow = th.querySelector(".sort-arrow");
+      if (field === state.sortField) {
+        th.classList.add("sort-active");
+        arrow.textContent = state.sortDir === 1 ? "▲" : "▼";
+      } else {
+        th.classList.remove("sort-active");
+        arrow.textContent = "";
+      }
+    });
+  }
+
+  function bindSortEvents() {
+    document.querySelectorAll("thead th[data-sort]").forEach(function (th) {
+      th.addEventListener("click", function () {
+        var field = th.getAttribute("data-sort");
+        if (state.sortField === field) {
+          state.sortDir = -state.sortDir;
+        } else {
+          state.sortField = field;
+          state.sortDir = 1;
+        }
+        renderTable();
+      });
+    });
   }
 
   function bindRowEvents() {
@@ -1678,6 +1738,8 @@
     });
 
     document.getElementById("btn-print").addEventListener("click", capturarComoImagem);
+
+    bindSortEvents();
   }
 
   init();
