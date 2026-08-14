@@ -1208,7 +1208,7 @@
 
   var CAP = {
     W: 1360, PAD: 28,
-    bg: "#faf9f4", surface: "#ffffff", border: "#e0ddcd", borderStrong: "#cac6b0",
+    bg: "#faf9f4", surface: "#ffffff", border: "#e0ddcd", borderStrong: "#cac6b0", accent: "#26297e",
     text: "#201f19", textMuted: "#6d6a5a", textFaint: "#97937e",
     brand: "#ffe600", brandInk: "#3a3300",
     good: "#16794f", goodSoft: "#e0f5ea", warn: "#9a5b0a", warnSoft: "#fbead0",
@@ -1300,6 +1300,12 @@
       ctx.lineWidth = 1;
       capRoundRect(ctx, tx, y, tileW, tileH, 10);
       ctx.fill(); ctx.stroke();
+      ctx.save();
+      capRoundRect(ctx, tx, y, tileW, tileH, 10);
+      ctx.clip();
+      ctx.fillStyle = CAP.accent;
+      ctx.fillRect(tx, y, tileW, 3);
+      ctx.restore();
       ctx.textAlign = "center";
       ctx.fillStyle = CAP.textFaint;
       ctx.font = "700 10.5px " + CAP.fontFamily;
