@@ -383,6 +383,17 @@
   }
   .row-del:hover { background: var(--critical-soft); color: var(--critical); }
 
+  .row-actions { display: flex; align-items: center; justify-content: center; gap: 1px; }
+  .row-drag {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-faint); opacity: 0.4; cursor: grab;
+    padding: 2px; border-radius: 5px; flex-shrink: 0;
+  }
+  .row-drag:hover { opacity: 0.9; background: var(--surface-2); }
+  .row-drag:active { cursor: grabbing; }
+  tbody tr.dragging { opacity: 0.4; }
+  tbody tr.drag-over td { box-shadow: inset 0 2px 0 0 var(--accent); }
+
   tfoot td {
     background: var(--brand);
     color: var(--brand-ink);
@@ -527,7 +538,7 @@
     thead th, tfoot td { background: #ffe600 !important; color: #3a3300 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tbody tr.zero-pending { display: none; }
     th:first-child, td:first-child { display: none; }
-    .row-del { display: none !important; }
+    .row-del, .row-drag { display: none !important; }
     td input, td select {
       border: none !important; background: transparent !important; color: #111 !important;
       appearance: none; padding: 2px 4px;
@@ -583,7 +594,7 @@
     <table>
       <thead>
         <tr>
-          <th style="width:26px"></th>
+          <th style="width:46px"></th>
           <th class="col-origem" data-sort="origem">Origem<span class="sort-arrow"></span></th>
           <th class="num" data-sort="backlog">Backlog<span class="sort-arrow"></span></th>
           <th class="num" data-sort="spa1">Planejadas SPA1<span class="sort-arrow"></span></th>
@@ -661,6 +672,16 @@
     "REOFERTA": "warn", "RISCO NOSHOW": "warn", "SEM ATIVIDADE": "warn",
     "NO SHOW": "critical", "ERRO OPERACIONAL": "critical",
     "OUTROS": "muted", "NÃO INICIADO": "muted", "": "muted"
+  };
+
+  // Mesmas cores usadas no chip do select fechado (s-good/s-info/...),
+  // aplicadas também em cada <option> pra colorir a lista suspensa.
+  var TONE_COLORS = {
+    good: { fg: "var(--good)", bg: "var(--good-soft)" },
+    info: { fg: "var(--info)", bg: "var(--info-soft)" },
+    warn: { fg: "var(--warn)", bg: "var(--warn-soft)" },
+    critical: { fg: "var(--critical)", bg: "var(--critical-soft)" },
+    muted: { fg: "var(--muted-chip)", bg: "var(--muted-chip-soft)" }
   };
 
   function seedData() {
@@ -815,45 +836,46 @@
   // neste navegador — assim as edições manuais também ficam compartilhadas.
   function mergeLiveIntoRows(existingRows, liveRows, manualByKey) {
     manualByKey = manualByKey || {};
-    var byKey = {};
-    existingRows.forEach(function (r) { byKey[r.grupo + "||" + r.origem] = r; });
+    var liveByKey = {};
+    liveRows.forEach(function (lr) { liveByKey[lr.grupo + "||" + lr.origem] = lr; });
     var seen = {};
     var nextId = existingRows.reduce(function (m, r) { return Math.max(m, r.id || 0); }, 0) + 1;
-    var merged = liveRows.map(function (lr) {
-      var key = lr.grupo + "||" + lr.origem;
-      seen[key] = true;
-      var prev = byKey[key];
-      var man = manualByKey[key];
+
+    function buildRow(id, grupo, origem, lr, man, prev) {
       return {
-        id: prev ? prev.id : nextId++,
-        grupo: lr.grupo,
-        origem: lr.origem,
+        id: id,
+        grupo: grupo,
+        origem: origem,
         backlog: man ? man.backlog : (prev ? prev.backlog : 0),
-        spa1: lr.spa1 || 0,
-        spa2: lr.spa2 || 0,
-        expedidas: lr.expedidas || 0,
+        spa1: lr ? (lr.spa1 || 0) : 0,
+        spa2: lr ? (lr.spa2 || 0) : 0,
+        expedidas: lr ? (lr.expedidas || 0) : 0,
         impactoDit: man ? man.impactoDit : (prev ? prev.impactoDit : 0),
         status: man ? man.status : (prev ? prev.status : ""),
         obs: man ? man.obs : (prev ? prev.obs : "")
       };
-    });
-    existingRows.forEach(function (r) {
+    }
+
+    // Preserva a ordem local (inclusive reordenação manual arrastando linhas):
+    // toda origem que já existia neste navegador continua na mesma posição,
+    // só troca os valores automáticos (spa1/spa2/expedidas) e os manuais mais
+    // recentes. Sem isso, o sync automático (a cada 60s) devolvia sempre a
+    // ordem alfabética que o Atualizador gera, desfazendo qualquer arrasto.
+    var merged = existingRows.map(function (r) {
       var key = r.grupo + "||" + r.origem;
-      if (!seen[key]) {
-        seen[key] = true;
-        var man = manualByKey[key];
-        // Origem não apareceu na última coleta (sem rotas ativas): mantém os
-        // campos manuais (priorizando o remoto, se houver) e zera as
-        // contagens automáticas, sem excluir a linha.
-        merged.push({
-          id: r.id, grupo: r.grupo, origem: r.origem, spa1: 0, spa2: 0, expedidas: 0,
-          backlog: man ? man.backlog : r.backlog,
-          impactoDit: man ? man.impactoDit : r.impactoDit,
-          status: man ? man.status : r.status,
-          obs: man ? man.obs : r.obs
-        });
-      }
+      seen[key] = true;
+      return buildRow(r.id, r.grupo, r.origem, liveByKey[key], manualByKey[key], r);
     });
+
+    // Origens novas na coleta automática (nunca vistas neste navegador antes):
+    // entram no final, na ordem em que a API retornou.
+    liveRows.forEach(function (lr) {
+      var key = lr.grupo + "||" + lr.origem;
+      if (seen[key]) return;
+      seen[key] = true;
+      merged.push(buildRow(nextId++, lr.grupo, lr.origem, lr, manualByKey[key], null));
+    });
+
     // Origem criada manualmente por outra pessoa (ex.: botão "+ Adicionar
     // origem") que ainda não existe neste navegador nem na coleta automática:
     // cria a linha aqui também, pra ficar igual pra todo mundo.
@@ -861,12 +883,9 @@
       if (seen[key]) return;
       seen[key] = true;
       var man = manualByKey[key];
-      merged.push({
-        id: nextId++, grupo: man.grupo, origem: man.origem, spa1: 0, spa2: 0, expedidas: 0,
-        backlog: man.backlog || 0, impactoDit: man.impactoDit || 0,
-        status: man.status || "", obs: man.obs || ""
-      });
+      merged.push(buildRow(nextId++, man.grupo, man.origem, null, man, null));
     });
+
     return { rows: merged, nextId: nextId };
   }
 
@@ -1033,11 +1052,51 @@
 
   function statusOptionsHtml(current) {
     return STATUS_OPTIONS.map(function (s) {
-      return '<option value="' + escapeHtml(s) + '"' + (s === current ? " selected" : "") + '>' + (s === "" ? "— sem status —" : escapeHtml(s)) + '</option>';
+      var colors = TONE_COLORS[STATUS_TONE[s] || "muted"];
+      var style = "color:" + colors.fg + ";background-color:" + colors.bg + ";";
+      return '<option value="' + escapeHtml(s) + '" style="' + style + '"' + (s === current ? " selected" : "") + '>' + (s === "" ? "— sem status —" : escapeHtml(s)) + '</option>';
     }).join("");
   }
 
+  var DRAG_HANDLE_SVG = '<svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">' +
+    '<circle cx="3" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/>' +
+    '<circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/>' +
+    '<circle cx="3" cy="14" r="1.3"/><circle cx="7" cy="14" r="1.3"/></svg>';
+
+  // Antes de reconstruir o tbody (chamado tanto por edições locais quanto por
+  // gatilhos externos — sync automático do Firebase a cada 60s, clique num
+  // cabeçalho pra ordenar, etc.), guarda o campo com foco e o texto exato que
+  // está nele (mesmo vazio). Sem isso, um desses gatilhos no meio de uma
+  // edição reconstrói o input a partir do valor já salvo (ex.: 0) e a pessoa
+  // vê o campo "voltar" pro número antigo mesmo tendo acabado de apagá-lo.
+  function captureFocusedInput() {
+    var tbody = document.getElementById("tbody");
+    var active = document.activeElement;
+    if (!active || !tbody.contains(active)) return null;
+    var tr = active.closest("tr");
+    var field = active.getAttribute("data-field");
+    if (!tr || !field) return null;
+    var info = { id: tr.getAttribute("data-id"), field: field, value: active.value };
+    if (typeof active.selectionStart === "number") {
+      info.selectionStart = active.selectionStart;
+      info.selectionEnd = active.selectionEnd;
+    }
+    return info;
+  }
+
+  function restoreFocusedInput(info) {
+    if (!info) return;
+    var el = document.querySelector('#tbody tr[data-id="' + info.id + '"] [data-field="' + info.field + '"]');
+    if (!el) return;
+    el.value = info.value;
+    el.focus();
+    if (typeof info.selectionStart === "number" && el.setSelectionRange) {
+      try { el.setSelectionRange(info.selectionStart, info.selectionEnd); } catch (e) {}
+    }
+  }
+
   function renderTable() {
+    var focusInfo = captureFocusedInput();
     var rows = filteredRows();
     var tbody = document.getElementById("tbody");
     var emptyState = document.getElementById("empty-state");
@@ -1053,7 +1112,10 @@
         var tone = pendingTone(p);
         var statusTone = STATUS_TONE[r.status] || "muted";
         return '<tr data-id="' + r.id + '" class="' + (p <= 0 ? "zero-pending" : "") + '">' +
-          '<td><button class="row-del" data-action="del" title="Remover origem">×</button></td>' +
+          '<td class="row-actions">' +
+            '<span class="row-drag" draggable="true" title="Arrastar para reordenar">' + DRAG_HANDLE_SVG + '</span>' +
+            '<button class="row-del" data-action="del" title="Remover origem">×</button>' +
+          '</td>' +
           '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
           '<td class="num" data-label="Backlog"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
           '<td class="num" data-label="Planejadas SPA1"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
@@ -1088,6 +1150,8 @@
 
     renderSortIndicators();
     bindRowEvents();
+    bindDragEvents();
+    restoreFocusedInput(focusInfo);
   }
 
   function renderSortIndicators() {
@@ -1169,6 +1233,69 @@
         state.rows = state.rows.filter(function (r) { return r.id !== id; });
         persist();
         renderAll();
+      });
+    });
+  }
+
+  // Reordena state.rows: move a linha arrastada pra posição da linha alvo.
+  // Sai da ordenação por coluna (se houver) pra ordem manual assumir.
+  function reorderRows(draggedId, targetId) {
+    var fromIdx = state.rows.findIndex(function (r) { return r.id === draggedId; });
+    var toIdx = state.rows.findIndex(function (r) { return r.id === targetId; });
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    var moved = state.rows.splice(fromIdx, 1)[0];
+    state.rows.splice(toIdx, 0, moved);
+    state.sortField = null;
+    state.sortDir = 1;
+    persist();
+    renderTable();
+  }
+
+  // Arrastar só começa a partir do ícone .row-drag (draggable="true" fica só
+  // nele, não na <tr> inteira) — assim editar texto/números normalmente nas
+  // outras células nunca é confundido com um gesto de arrastar.
+  function bindDragEvents() {
+    var tbody = document.getElementById("tbody");
+    var draggingId = null;
+
+    tbody.querySelectorAll(".row-drag").forEach(function (handle) {
+      handle.addEventListener("dragstart", function (e) {
+        var tr = handle.closest("tr");
+        if (!tr) return;
+        draggingId = Number(tr.getAttribute("data-id"));
+        e.dataTransfer.effectAllowed = "move";
+        try { e.dataTransfer.setData("text/plain", String(draggingId)); } catch (err) {}
+        tr.classList.add("dragging");
+      });
+      handle.addEventListener("dragend", function () {
+        var tr = handle.closest("tr");
+        if (tr) tr.classList.remove("dragging");
+        tbody.querySelectorAll(".drag-over").forEach(function (r) { r.classList.remove("drag-over"); });
+        draggingId = null;
+      });
+    });
+
+    tbody.querySelectorAll("tr").forEach(function (tr) {
+      tr.addEventListener("dragover", function (e) {
+        if (draggingId == null) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (!tr.classList.contains("drag-over")) {
+          tbody.querySelectorAll(".drag-over").forEach(function (r) { r.classList.remove("drag-over"); });
+          tr.classList.add("drag-over");
+        }
+      });
+      tr.addEventListener("dragleave", function () {
+        tr.classList.remove("drag-over");
+      });
+      tr.addEventListener("drop", function (e) {
+        if (draggingId == null) return;
+        e.preventDefault();
+        tr.classList.remove("drag-over");
+        var targetId = Number(tr.getAttribute("data-id"));
+        var fromId = draggingId;
+        draggingId = null;
+        if (targetId !== fromId) reorderRows(fromId, targetId);
       });
     });
   }
