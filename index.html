@@ -450,6 +450,66 @@
     .toolbar .search { min-width: 0; max-width: none; flex: 1 1 100%; }
     .tabs { flex: 1 1 100%; justify-content: center; }
     footer.note { padding: 0 14px 30px; flex-direction: column; gap: 4px; }
+
+    /* Tabela vira uma lista de cartões (um por origem) em vez de rolar na
+       horizontal — cada célula é exibida como "rótulo: valor" empilhado,
+       usando o data-label de cada <td>. Assim ela cabe inteira na largura
+       da tela, sem cortar nenhuma coluna. */
+    .table-wrap { overflow: visible; max-height: none; border: none; box-shadow: none; background: transparent; }
+    table { min-width: 0; width: 100%; }
+    thead { display: none; }
+    table, tbody, tfoot, tr, td { display: block; }
+    tbody tr, tfoot tr {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px 14px 4px;
+      margin-bottom: 10px;
+    }
+    tbody td, tfoot td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--border);
+      text-align: right;
+    }
+    tbody tr td:last-child, tfoot tr td:last-child { border-bottom: none; }
+    tbody td::before, tfoot td::before {
+      content: attr(data-label);
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+      flex-shrink: 0;
+    }
+    tbody td:first-child {
+      display: block;
+      position: absolute; top: 6px; right: 6px;
+      padding: 0; border-bottom: none;
+    }
+    tbody td.col-origem, tfoot td.col-origem {
+      display: block;
+      text-align: left;
+      font-size: 14.5px;
+      padding: 2px 34px 10px 0;
+      border-bottom: 1px solid var(--border-strong);
+      margin-bottom: 2px;
+    }
+    tbody td.col-origem::before, tfoot td.col-origem::before { content: none; }
+    tbody td[data-label="Status"], tbody td[data-label="Observação"] {
+      display: block; text-align: left;
+    }
+    tbody td[data-label="Status"]::before, tbody td[data-label="Observação"]::before {
+      display: block; margin-bottom: 5px;
+    }
+    td[data-label="Observação"] input[type="text"] { width: 100%; min-width: 0; text-align: left; }
+    tbody td[data-label="Status"] select.status-select { width: 100%; text-align: left; text-align-last: left; }
+    .empty-state { margin: 0 10px; }
   }
 
   @media print {
@@ -536,13 +596,13 @@
       <tfoot>
         <tr>
           <td></td>
-          <td id="f-count">—</td>
-          <td class="num" id="f-backlog">0</td>
-          <td class="num" id="f-spa1">0</td>
-          <td class="num" id="f-spa2">0</td>
-          <td class="num" id="f-total">0</td>
-          <td class="num" id="f-exp">0</td>
-          <td class="num" id="f-pend">0</td>
+          <td class="col-origem" id="f-count">—</td>
+          <td class="num" id="f-backlog" data-label="Backlog">0</td>
+          <td class="num" id="f-spa1" data-label="Planejadas SPA1">0</td>
+          <td class="num" id="f-spa2" data-label="Planejadas SPA2">0</td>
+          <td class="num" id="f-total" data-label="Total">0</td>
+          <td class="num" id="f-exp" data-label="Expedidas">0</td>
+          <td class="num" id="f-pend" data-label="Pendentes">0</td>
           <td colspan="3"></td>
         </tr>
       </tfoot>
@@ -552,7 +612,7 @@
 </main>
 
 <footer class="note">
-  <span>Modelo baseado em Expedição_SPA1_SPA2.xlsx · valores editáveis salvos neste navegador. <span id="auto-sync-info"></span></span>
+  <span>Desenvolvido por: Ezequiel Miranda <span id="auto-sync-info"></span></span>
   <span>Última edição: <span id="last-edit">—</span></span>
 </footer>
 
@@ -965,15 +1025,15 @@
         return '<tr data-id="' + r.id + '" class="' + (p <= 0 ? "zero-pending" : "") + '">' +
           '<td><button class="row-del" data-action="del" title="Remover origem">×</button></td>' +
           '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
-          '<td class="num"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
-          '<td class="num"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
-          '<td class="num"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
-          '<td class="num calc-cell">' + t + '</td>' +
-          '<td class="num"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
-          '<td class="num"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
-          '<td class="num"><input type="number" min="0" data-field="impactoDit" value="' + r.impactoDit + '"></td>' +
-          '<td class="center-col"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
-          '<td class="center-col"><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
+          '<td class="num" data-label="Backlog"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
+          '<td class="num" data-label="Planejadas SPA1"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
+          '<td class="num" data-label="Planejadas SPA2"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
+          '<td class="num calc-cell" data-label="Total">' + t + '</td>' +
+          '<td class="num" data-label="Expedidas"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
+          '<td class="num" data-label="Pendentes"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
+          '<td class="num" data-label="Impacto DIT"><input type="number" min="0" data-field="impactoDit" value="' + r.impactoDit + '"></td>' +
+          '<td class="center-col" data-label="Status"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
+          '<td class="center-col" data-label="Observação"><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
         '</tr>';
       }).join("");
     }
