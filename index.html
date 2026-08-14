@@ -345,6 +345,7 @@
   td input[type="text"] { min-width: 140px; box-sizing: border-box; text-align: center; }
   td input:hover { background: var(--surface-2); }
   td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
+  td input.manual-override { background: var(--accent-soft); border-color: var(--accent); }
   td input[type="number"]::-webkit-outer-spin-button, td input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
   .calc-cell { font-weight: 700; font-variant-numeric: tabular-nums; padding: 5px 10px; }
@@ -824,6 +825,7 @@
       var payload = {
         grupo: row.grupo, origem: row.origem,
         backlog: row.backlog, status: row.status, obs: row.obs, impactoDit: row.impactoDit,
+        spa2: row.spa2, spa2Manual: !!row.spa2Manual,
         updatedAt: new Date().toISOString()
       };
       fetch(FIREBASE_URL + "/manual/" + firebaseSafeKey(key) + ".json", {
@@ -847,13 +849,22 @@
     var nextId = existingRows.reduce(function (m, r) { return Math.max(m, r.id || 0); }, 0) + 1;
 
     function buildRow(id, grupo, origem, lr, man, prev) {
+      // Planejadas SPA2 normalmente vem da coleta automática (lr.spa2), mas se
+      // alguém já editou esse campo na mão (spa2Manual: true — localmente ou
+      // gravado por outra pessoa em /manual no Firebase), esse valor manual
+      // prevalece e para de ser sobrescrito pela sincronização automática.
+      var spa2Manual = man ? !!man.spa2Manual : !!(prev && prev.spa2Manual);
+      var spa2Value = spa2Manual
+        ? Number(man ? man.spa2 : prev.spa2) || 0
+        : (lr ? (lr.spa2 || 0) : (prev ? (Number(prev.spa2) || 0) : 0));
       return {
         id: id,
         grupo: grupo,
         origem: origem,
         backlog: man ? man.backlog : (prev ? prev.backlog : 0),
         spa1: lr ? (lr.spa1 || 0) : 0,
-        spa2: lr ? (lr.spa2 || 0) : 0,
+        spa2: spa2Value,
+        spa2Manual: spa2Manual,
         expedidas: lr ? (lr.expedidas || 0) : 0,
         impactoDit: man ? man.impactoDit : (prev ? prev.impactoDit : 0),
         status: man ? man.status : (prev ? prev.status : ""),
@@ -1126,7 +1137,7 @@
           '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
           '<td class="num" data-label="Backlog"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
           '<td class="num" data-label="Planejadas SPA1"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
-          '<td class="num" data-label="Planejadas SPA2"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
+          '<td class="num" data-label="Planejadas SPA2"><input type="number" min="0" data-field="spa2" class="' + (r.spa2Manual ? "manual-override" : "") + '" value="' + r.spa2 + '"' + (r.spa2Manual ? ' title="Valor definido manualmente — não é sobrescrito pela sincronização automática."' : '') + '></td>' +
           '<td class="num calc-cell" data-label="Total">' + t + '</td>' +
           '<td class="num" data-label="Expedidas"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
           '<td class="num" data-label="Pendentes"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
@@ -1203,6 +1214,11 @@
         if (field === "backlog" || field === "spa1" || field === "spa2" || field === "expedidas") {
           var v = parseInt(el.value, 10);
           row[field] = isNaN(v) ? 0 : Math.max(0, v);
+          if (field === "spa2") {
+            row.spa2Manual = true;
+            el.classList.add("manual-override");
+            el.title = "Valor definido manualmente — não é sobrescrito pela sincronização automática.";
+          }
           var t = total(row), p = pending(row);
           tr.querySelector(".calc-cell").textContent = t;
           var pill = tr.querySelector(".pending-pill");
@@ -1214,7 +1230,7 @@
           renderGroups();
           renderTabs();
           updateFooter();
-          if (field === "backlog") pushManualField(row);
+          if (field === "backlog" || field === "spa2") pushManualField(row);
         } else if (field === "status") {
           row.status = el.value;
           var tone2 = STATUS_TONE[row.status] || "muted";
