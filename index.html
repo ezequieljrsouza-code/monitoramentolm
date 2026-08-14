@@ -383,7 +383,8 @@
   }
   .row-del:hover { background: var(--critical-soft); color: var(--critical); }
 
-  .row-actions { display: flex; align-items: center; justify-content: center; gap: 0; }
+  .row-actions { text-align: center; vertical-align: middle; }
+  .row-actions-inner { display: inline-flex; align-items: center; justify-content: center; gap: 0; }
   .row-drag {
     display: inline-flex; align-items: center; justify-content: center;
     color: var(--text-faint); opacity: 0.4; cursor: grab;
@@ -1117,8 +1118,10 @@
         var statusTone = STATUS_TONE[r.status] || "muted";
         return '<tr data-id="' + r.id + '" class="' + (p <= 0 ? "zero-pending" : "") + '">' +
           '<td class="row-actions">' +
-            '<span class="row-drag" draggable="true" title="Arrastar para reordenar">' + DRAG_HANDLE_SVG + '</span>' +
-            '<button class="row-del" data-action="del" title="Remover origem">×</button>' +
+            '<span class="row-actions-inner">' +
+              '<span class="row-drag" draggable="true" title="Arrastar para reordenar">' + DRAG_HANDLE_SVG + '</span>' +
+              '<button class="row-del" data-action="del" title="Remover origem">×</button>' +
+            '</span>' +
           '</td>' +
           '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
           '<td class="num" data-label="Backlog"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
