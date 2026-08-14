@@ -379,15 +379,15 @@
 
   .row-del {
     border: none; background: transparent; color: var(--text-faint);
-    cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 5px; line-height: 1;
+    cursor: pointer; font-size: 14px; padding: 2px 3px; border-radius: 5px; line-height: 1;
   }
   .row-del:hover { background: var(--critical-soft); color: var(--critical); }
 
-  .row-actions { display: flex; align-items: center; justify-content: center; gap: 1px; }
+  .row-actions { display: flex; align-items: center; justify-content: center; gap: 0; }
   .row-drag {
     display: inline-flex; align-items: center; justify-content: center;
     color: var(--text-faint); opacity: 0.4; cursor: grab;
-    padding: 2px; border-radius: 5px; flex-shrink: 0;
+    padding: 1px; border-radius: 4px; flex-shrink: 0;
   }
   .row-drag:hover { opacity: 0.9; background: var(--surface-2); }
   .row-drag:active { cursor: grabbing; }
@@ -586,6 +586,7 @@
     <button class="btn" id="btn-add">+ Adicionar origem</button>
     <button class="btn" id="btn-import">⤒ Importar CSV</button>
     <input type="file" id="file-import" accept=".csv,text/csv" style="display:none">
+    <button class="btn ghost" id="btn-copy-report" title="Copiar report de rotas pendentes (com observações)">📋 Report</button>
     <button class="btn" id="btn-print">📷 Capturar pendentes</button>
     <button class="btn primary" id="btn-export">⤓ Baixar para Sheets (CSV)</button>
   </section>
@@ -594,7 +595,7 @@
     <table>
       <thead>
         <tr>
-          <th style="width:46px"></th>
+          <th style="width:30px"></th>
           <th class="col-origem" data-sort="origem">Origem<span class="sort-arrow"></span></th>
           <th class="num" data-sort="backlog">Backlog<span class="sort-arrow"></span></th>
           <th class="num" data-sort="spa1">Planejadas SPA1<span class="sort-arrow"></span></th>
@@ -722,7 +723,10 @@
   };
 
   var SORT_VALUE_GETTERS = {
-    origem: function (r) { return r.origem.toLowerCase(); },
+    // Ordena primeiro por grupo (XPT/SVC/NEX/DC) e só depois por nome — assim
+    // origens do mesmo grupo continuam juntas ao ordenar por essa coluna, em
+    // vez de se espalharem numa ordem puramente alfabética pelo nome.
+    origem: function (r) { return (r.grupo + "||" + r.origem).toLowerCase(); },
     backlog: function (r) { return Number(r.backlog) || 0; },
     spa1: function (r) { return Number(r.spa1) || 0; },
     spa2: function (r) { return Number(r.spa2) || 0; },
@@ -1058,10 +1062,10 @@
     }).join("");
   }
 
-  var DRAG_HANDLE_SVG = '<svg width="10" height="14" viewBox="0 0 10 16" fill="currentColor" aria-hidden="true">' +
-    '<circle cx="3" cy="2" r="1.3"/><circle cx="7" cy="2" r="1.3"/>' +
-    '<circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/>' +
-    '<circle cx="3" cy="14" r="1.3"/><circle cx="7" cy="14" r="1.3"/></svg>';
+  var DRAG_HANDLE_SVG = '<svg width="7" height="11" viewBox="0 0 8 12" fill="currentColor" aria-hidden="true">' +
+    '<circle cx="2" cy="1.5" r="1.1"/><circle cx="6" cy="1.5" r="1.1"/>' +
+    '<circle cx="2" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/>' +
+    '<circle cx="2" cy="10.5" r="1.1"/><circle cx="6" cy="10.5" r="1.1"/></svg>';
 
   // Antes de reconstruir o tbody (chamado tanto por edições locais quanto por
   // gatilhos externos — sync automático do Firebase a cada 60s, clique num
@@ -1140,7 +1144,7 @@
       return a;
     }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
 
-    document.getElementById("f-count").textContent = rows.length + " origem" + (rows.length === 1 ? "" : "s");
+    document.getElementById("f-count").textContent = rows.length + " " + (rows.length === 1 ? "origem" : "origens");
     document.getElementById("f-backlog").textContent = fmtMilhar(sum.backlog);
     document.getElementById("f-spa1").textContent = fmtMilhar(sum.spa1);
     document.getElementById("f-spa2").textContent = fmtMilhar(sum.spa2);
@@ -1745,7 +1749,7 @@
     ctx.restore();
     ctx.fillStyle = CAP.brandInk;
     ctx.font = "800 12px " + CAP.fontFamily;
-    ctx.fillText(pendentesRows.length + " origem" + (pendentesRows.length === 1 ? "" : "s"), colX[0] + 10, ry + footH / 2 + 4);
+    ctx.fillText(pendentesRows.length + " " + (pendentesRows.length === 1 ? "origem" : "origens"), colX[0] + 10, ry + footH / 2 + 4);
     ctx.textAlign = "center";
     ctx.fillText(String(sumP.backlog), colX[1] + cols[1].w / 2, ry + footH / 2 + 4);
     ctx.fillText(String(sumP.spa1), colX[2] + cols[2].w / 2, ry + footH / 2 + 4);
@@ -1757,6 +1761,51 @@
 
     y = tableTop + tableH + PAD;
     return y;
+  }
+
+  // Mesmo recorte usado na captura de imagem (só origens com pendência,
+  // agrupadas por grupo+origem) — texto pronto pra colar num grupo/chat,
+  // com a Observação da linha espelhada junto quando ela existir.
+  function buildReportText() {
+    var pendentesRows = state.rows.filter(function (r) { return pending(r) > 0; })
+      .sort(function (a, b) { return (a.grupo + a.origem).localeCompare(b.grupo + b.origem); });
+    var sum = summarize(state.rows);
+
+    var linhas = [];
+    linhas.push("📦 MONITORAMENTO LM - PARCIAL");
+    linhas.push("");
+    linhas.push("▶️ Planejadas - " + sum.total);
+    linhas.push("▶️ Expedidas - " + sum.exp);
+    linhas.push("▶️ Pendentes - " + sum.pend);
+    linhas.push("");
+
+    if (!pendentesRows.length) {
+      linhas.push("Nenhuma rota pendente no momento.");
+    } else {
+      pendentesRows.forEach(function (r) {
+        var p = pending(r);
+        var linha = "• " + r.grupo + " " + r.origem + ": " + p + " pendente" + (p === 1 ? "" : "s");
+        if (r.obs && r.obs.trim()) linha += " — " + r.obs.trim();
+        linhas.push(linha);
+      });
+      linhas.push("");
+      linhas.push("Total: " + sum.pend + " pendente" + (sum.pend === 1 ? "" : "s") + " em " + pendentesRows.length + " " + (pendentesRows.length === 1 ? "origem" : "origens") + ".");
+    }
+
+    return linhas.join("\n");
+  }
+
+  async function copiarReport() {
+    var btn = document.getElementById("btn-copy-report");
+    btn.disabled = true;
+    try {
+      await navigator.clipboard.writeText(buildReportText());
+      showToast("Report copiado para a área de transferência.");
+    } catch (e) {
+      showToast("Não foi possível copiar o report.");
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function capturarComoImagem() {
@@ -1864,6 +1913,7 @@
       e.target.value = "";
     });
 
+    document.getElementById("btn-copy-report").addEventListener("click", copiarReport);
     document.getElementById("btn-print").addEventListener("click", capturarComoImagem);
 
     bindSortEvents();
