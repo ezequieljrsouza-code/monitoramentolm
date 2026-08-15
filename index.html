@@ -1620,9 +1620,51 @@
     return w;
   }
 
+  // Larguras fixas das colunas da tabela de pendentes na captura — todas
+  // menos Observação, que estica pra caber o texto inteiro sem cortar
+  // (ver capObsColWidth).
+  var CAP_TABLE_COLS = [
+    { key: "origem", label: "Origem", w: 260 },
+    { key: "backlog", label: "Backlog", w: 82, num: true },
+    { key: "spa1", label: "Planejadas SPA1", w: 108, num: true },
+    { key: "spa2", label: "Planejadas SPA2", w: 108, num: true },
+    { key: "total", label: "Total", w: 74, num: true },
+    { key: "exp", label: "Expedidas", w: 84, num: true },
+    { key: "pend", label: "Pendentes", w: 90, num: true },
+    { key: "impactoDit", label: "Impacto DIT", w: 100, num: true },
+    { key: "status", label: "Status", w: 160 },
+    { key: "obs", label: "Observação", w: 0 } // calculado dinamicamente
+  ];
+
+  // Largura que a coluna Observação precisa pra caber a maior observação
+  // das linhas exibidas inteira, numa linha só, sem "…" cortando o texto —
+  // nunca menor que o espaço que sobraria naturalmente (remainderW).
+  function capObsColWidth(ctx, pendentesRows, remainderW) {
+    ctx.font = "12px " + CAP.fontFamily;
+    var maxTextW = 0;
+    pendentesRows.forEach(function (r) {
+      if (!r.obs) return;
+      var w = ctx.measureText(r.obs).width;
+      if (w > maxTextW) maxTextW = w;
+    });
+    return Math.max(140, remainderW, Math.ceil(maxTextW) + 20);
+  }
+
+  // Calcula a largura total do canvas (>= CAP.W) já contando o espaço extra
+  // que a coluna Observação vai precisar, pra desenharCaptura nunca ter que
+  // cortar ou estourar a borda direita.
+  function capComputeCanvasWidth(pendentesRows) {
+    var measureCtx = document.createElement("canvas").getContext("2d");
+    var baseContentW = CAP.W - CAP.PAD * 2;
+    var fixedColsW = CAP_TABLE_COLS.reduce(function (a, c) { return c.key === "obs" ? a : a + c.w; }, 0);
+    var obsW = capObsColWidth(measureCtx, pendentesRows, baseContentW - fixedColsW);
+    var extra = Math.max(0, (fixedColsW + obsW) - baseContentW);
+    return CAP.W + extra;
+  }
+
   // Layout: título -> tiles de KPI -> cards por grupo -> tabela (só pendentes>0).
-  function desenharCaptura(ctx, pendentesRows) {
-    var W = CAP.W, PAD = CAP.PAD, contentW = W - PAD * 2;
+  function desenharCaptura(ctx, pendentesRows, canvasW) {
+    var W = canvasW || CAP.W, PAD = CAP.PAD, contentW = W - PAD * 2;
     var y = PAD;
 
     ctx.textBaseline = "alphabetic";
@@ -1705,20 +1747,9 @@
     y += gH + 16;
 
     // --- Table (somente pendentes > 0) ---
-    var cols = [
-      { key: "origem", label: "Origem", w: 260 },
-      { key: "backlog", label: "Backlog", w: 82, num: true },
-      { key: "spa1", label: "Planejadas SPA1", w: 108, num: true },
-      { key: "spa2", label: "Planejadas SPA2", w: 108, num: true },
-      { key: "total", label: "Total", w: 74, num: true },
-      { key: "exp", label: "Expedidas", w: 84, num: true },
-      { key: "pend", label: "Pendentes", w: 90, num: true },
-      { key: "impactoDit", label: "Impacto DIT", w: 100, num: true },
-      { key: "status", label: "Status", w: 160 },
-      { key: "obs", label: "Observação", w: 0 } // preenche o restante
-    ];
-    var fixedSum = cols.reduce(function (a, c) { return a + c.w; }, 0);
-    cols[cols.length - 1].w = Math.max(140, contentW - fixedSum);
+    var cols = CAP_TABLE_COLS.map(function (c) { return { key: c.key, label: c.label, w: c.w, num: c.num }; });
+    var fixedSum = cols.reduce(function (a, c) { return c.key === "obs" ? a : a + c.w; }, 0);
+    cols[cols.length - 1].w = capObsColWidth(ctx, pendentesRows, contentW - fixedSum);
     var colX = [];
     var cx = PAD;
     cols.forEach(function (c) { colX.push(cx); cx += c.w; });
@@ -1899,16 +1930,19 @@
       var headH = 32, rowH = 30, footH = 32;
       var tableH = headH + pendentesRows.length * rowH + footH;
       var totalH = CAP.PAD /*top*/ + (22 + 6 + 13 + 20) + (88 + 12) + (60 + 16) + tableH + CAP.PAD;
+      // Alarga o canvas se alguma Observação precisar de mais espaço do que
+      // a largura padrão pra caber inteira numa linha só (sem cortar/"…").
+      var capW = capComputeCanvasWidth(pendentesRows);
 
       var canvas = document.createElement("canvas");
-      canvas.width = CAP.W * scale;
+      canvas.width = capW * scale;
       canvas.height = Math.ceil(totalH) * scale;
       var ctx = canvas.getContext("2d");
       ctx.scale(scale, scale);
       ctx.fillStyle = CAP.bg;
-      ctx.fillRect(0, 0, CAP.W, totalH);
+      ctx.fillRect(0, 0, capW, totalH);
 
-      desenharCaptura(ctx, pendentesRows);
+      desenharCaptura(ctx, pendentesRows, capW);
 
       await new Promise(function (resolve) {
         canvas.toBlob(async function (blob) {
