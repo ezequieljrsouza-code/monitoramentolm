@@ -347,6 +347,20 @@
   td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
   td input[type="number"]::-webkit-outer-spin-button, td input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
+  .field-with-lock { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+  td input.manual-input {
+    background: var(--warn-soft);
+    border-color: var(--warn);
+    color: var(--warn);
+    font-weight: 700;
+  }
+  .manual-lock {
+    border: none; background: transparent; cursor: pointer;
+    font-size: 11px; line-height: 1; padding: 2px; border-radius: 4px;
+    flex-shrink: 0; opacity: 0.85;
+  }
+  .manual-lock:hover { background: var(--warn-soft); opacity: 1; }
+
   .calc-cell { font-weight: 700; font-variant-numeric: tabular-nums; padding: 5px 10px; }
   .pending-pill {
     display: inline-flex; align-items: center; justify-content: center;
@@ -813,6 +827,16 @@
 
   var manualPushTimers = {};
 
+  function buildManualPayload(row) {
+    return {
+      grupo: row.grupo, origem: row.origem,
+      backlog: row.backlog, status: row.status, obs: row.obs, impactoDit: row.impactoDit,
+      spa2: row.spa2, spa2Manual: !!row.spa2Manual,
+      expedidas: row.expedidas, expedidasManual: !!row.expedidasManual,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
   // Grava os campos manuais de UMA origem no Firebase (debounced — espera a
   // pessoa parar de digitar), pra quem mais estiver com o painel aberto
   // receber essa edição no próximo ciclo de sincronização (a cada 60s, ou
@@ -821,19 +845,35 @@
     var key = row.grupo + "||" + row.origem;
     clearTimeout(manualPushTimers[key]);
     manualPushTimers[key] = setTimeout(function () {
-      var payload = {
-        grupo: row.grupo, origem: row.origem,
-        backlog: row.backlog, status: row.status, obs: row.obs, impactoDit: row.impactoDit,
-        spa2: row.spa2, spa2Manual: !!row.spa2Manual,
-        expedidas: row.expedidas, expedidasManual: !!row.expedidasManual,
-        updatedAt: new Date().toISOString()
-      };
       fetch(FIREBASE_URL + "/manual/" + firebaseSafeKey(key) + ".json", {
         method: "PUT",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(buildManualPayload(row))
       }).catch(function () { /* falha silenciosa: edição já está salva localmente */ });
     }, 700);
+  }
+
+  // Destrava um campo travado manualmente (expedidas ou spa2): volta a
+  // seguir o valor automático da API. Grava a mudança no Firebase de forma
+  // síncrona (sem debounce, senão o próximo sync corre risco de ler o flag
+  // antigo ainda "true") e, assim que confirma, força um sync imediato pra
+  // já trazer o valor atual em vez de esperar até 60s.
+  function unlockField(rowId, field) {
+    var row = state.rows.find(function (r) { return r.id === rowId; });
+    if (!row) return;
+    row[field + "Manual"] = false;
+    persist();
+    renderAll();
+    var key = row.grupo + "||" + row.origem;
+    clearTimeout(manualPushTimers[key]);
+    showToast("Campo destravado — buscando valor automático...");
+    fetch(FIREBASE_URL + "/manual/" + firebaseSafeKey(key) + ".json", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(buildManualPayload(row))
+    }).catch(function () {}).finally(function () {
+      syncFromFirebase(false);
+    });
   }
 
   // Combina as origens extraídas automaticamente (spa1/spa2/expedidas) com os
@@ -852,12 +892,18 @@
     // alguém já editou um desses campos na mão (fooManual: true — localmente ou
     // gravado por outra pessoa em /manual no Firebase), o valor manual prevalece
     // e para de ser sobrescrito pela sincronização automática.
+    // Sem override manual, o campo segue 100% a coleta ao vivo: se a origem
+    // não aparece mais em liveRows (nenhuma rota dela na API agora), o valor
+    // zera — igual ao spa1/spa2 já fazem. Antes caía pro valor salvo local
+    // (prev[campo]), então uma origem sem rotas nenhuma hoje ficava com
+    // "Expedidas" grudado no número de um dia anterior pra sempre (Total
+    // zerava mas Expedidas não, gerando Pendentes negativo).
     function campoComOverrideManual(campo, lr, man, prev) {
       var manualFlagKey = campo + "Manual";
       var manual = man ? !!man[manualFlagKey] : !!(prev && prev[manualFlagKey]);
       var valor = manual
         ? Number(man ? man[campo] : prev[campo]) || 0
-        : (lr ? (lr[campo] || 0) : (prev ? (Number(prev[campo]) || 0) : 0));
+        : (lr ? (lr[campo] || 0) : 0);
       return { manual: manual, valor: valor };
     }
 
@@ -1145,9 +1191,9 @@
           '<td class="col-origem"><span class="cat-badge"><span class="dot" style="background:' + CATEGORIES[r.grupo].color + '"></span>' + r.grupo + '</span> <span class="origin-name">' + escapeHtml(r.origem) + '</span></td>' +
           '<td class="num" data-label="Backlog"><input type="number" min="0" data-field="backlog" value="' + r.backlog + '"></td>' +
           '<td class="num" data-label="Planejadas SPA1"><input type="number" min="0" data-field="spa1" value="' + r.spa1 + '"></td>' +
-          '<td class="num" data-label="Planejadas SPA2"><input type="number" min="0" data-field="spa2" value="' + r.spa2 + '"></td>' +
+          '<td class="num" data-label="Planejadas SPA2"><span class="field-with-lock"><input type="number" min="0" data-field="spa2" class="' + (r.spa2Manual ? "manual-input" : "") + '" value="' + r.spa2 + '">' + (r.spa2Manual ? '<button type="button" class="manual-lock" data-unlock="spa2" title="Travado manualmente — clique para voltar ao automático">🔒</button>' : '') + '</span></td>' +
           '<td class="num calc-cell" data-label="Total">' + t + '</td>' +
-          '<td class="num" data-label="Expedidas"><input type="number" min="0" data-field="expedidas" value="' + r.expedidas + '"></td>' +
+          '<td class="num" data-label="Expedidas"><span class="field-with-lock"><input type="number" min="0" data-field="expedidas" class="' + (r.expedidasManual ? "manual-input" : "") + '" value="' + r.expedidas + '">' + (r.expedidasManual ? '<button type="button" class="manual-lock" data-unlock="expedidas" title="Travado manualmente — clique para voltar ao automático">🔒</button>' : '') + '</span></td>' +
           '<td class="num" data-label="Pendentes"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
           '<td class="num" data-label="Impacto DIT"><input type="number" min="0" data-field="impactoDit" value="' + r.impactoDit + '"></td>' +
           '<td class="center-col" data-label="Status"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
@@ -1261,6 +1307,15 @@
         state.rows = state.rows.filter(function (r) { return r.id !== id; });
         persist();
         renderAll();
+      });
+    });
+    tbody.querySelectorAll(".manual-lock").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var tr = btn.closest("tr");
+        var id = Number(tr.getAttribute("data-id"));
+        var field = btn.getAttribute("data-unlock");
+        unlockField(id, field);
       });
     });
   }
