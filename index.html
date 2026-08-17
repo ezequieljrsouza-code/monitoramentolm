@@ -1894,11 +1894,13 @@
     return y;
   }
 
-  // Mesmo recorte usado na captura de imagem (só origens com pendência,
-  // agrupadas por grupo+origem) — texto pronto pra colar num grupo/chat,
-  // com a Observação da linha espelhada junto quando ela existir.
+  // Mesmo recorte usado na captura de imagem (origens com pendência != 0,
+  // incluindo as negativas — Expedidas acima do Total — que também entram
+  // pra ficarem visíveis com o sinal de "-"), agrupadas por grupo+origem —
+  // texto pronto pra colar num grupo/chat, com a Observação da linha
+  // espelhada junto quando ela existir.
   function buildReportText() {
-    var pendentesRows = state.rows.filter(function (r) { return pending(r) > 0; })
+    var pendentesRows = state.rows.filter(function (r) { return pending(r) !== 0; })
       .sort(function (a, b) { return (a.grupo + a.origem).localeCompare(b.grupo + b.origem); });
     var sum = summarize(state.rows);
 
@@ -1944,7 +1946,7 @@
     btn.disabled = true;
     showToast("Gerando imagem em HD...");
     try {
-      var pendentesRows = state.rows.filter(function (r) { return pending(r) > 0; })
+      var pendentesRows = state.rows.filter(function (r) { return pending(r) !== 0; })
         .sort(function (a, b) { return (a.grupo + a.origem).localeCompare(b.grupo + b.origem); });
 
       var scale = 2;
