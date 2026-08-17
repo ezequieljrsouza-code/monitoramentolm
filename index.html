@@ -1060,7 +1060,7 @@
       sum.spa2 += Number(r.spa2) || 0;
       sum.total += total(r);
       sum.exp += Number(r.expedidas) || 0;
-      sum.pend += pending(r);
+      sum.pend += Math.max(0, pending(r));
     });
     return sum;
   }
@@ -1103,7 +1103,7 @@
     var groups = ["XPT", "SVC", "NEX", "DC"];
     var html = groups.map(function (g) {
       var rows = state.rows.filter(function (r) { return r.grupo === g; });
-      var pend = rows.reduce(function (a, r) { return a + pending(r); }, 0);
+      var pend = rows.reduce(function (a, r) { return a + Math.max(0, pending(r)); }, 0);
       var tot = rows.reduce(function (a, r) { return a + total(r); }, 0);
       var active = state.filterGroup === g;
       return '<button class="group-card' + (active ? " active" : "") + '" data-group="' + g + '">' +
@@ -1228,7 +1228,7 @@
       a.spa2 += Number(r.spa2) || 0;
       a.total += total(r);
       a.exp += Number(r.expedidas) || 0;
-      a.pend += pending(r);
+      a.pend += Math.max(0, pending(r));
       return a;
     }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
 
@@ -1412,7 +1412,7 @@
       a.spa2 += Number(r.spa2) || 0;
       a.total += total(r);
       a.exp += Number(r.expedidas) || 0;
-      a.pend += pending(r);
+      a.pend += Math.max(0, pending(r));
       return a;
     }, { backlog: 0, spa1: 0, spa2: 0, total: 0, exp: 0, pend: 0 });
     document.getElementById("f-backlog").textContent = fmtMilhar(sum.backlog);
@@ -1742,7 +1742,7 @@
     var gW = (contentW - gGap * (groups.length - 1)) / groups.length;
     groups.forEach(function (g, i) {
       var rows = state.rows.filter(function (r) { return r.grupo === g; });
-      var pend = rows.reduce(function (a, r) { return a + pending(r); }, 0);
+      var pend = rows.reduce(function (a, r) { return a + Math.max(0, pending(r)); }, 0);
       var tot = rows.reduce(function (a, r) { return a + total(r); }, 0);
       var gx = PAD + i * (gW + gGap);
       ctx.fillStyle = CAP.surface;
