@@ -391,6 +391,20 @@
   select.status-select.s-critical { background-color: var(--critical-soft); color: var(--critical); }
   select.status-select.s-muted { background-color: var(--muted-chip-soft); color: var(--muted-chip); }
 
+  /* Alça de preenchimento do Status (equivalente ao "arrastar" do Excel):
+     quadradinho no canto do select — arrastar sobre outras linhas replica
+     o mesmo status nelas, igual ao fill handle de uma planilha. */
+  .status-fill-wrap { position: relative; display: inline-block; }
+  .status-fill-wrap .fill-handle {
+    position: absolute; right: -3px; bottom: -3px; width: 8px; height: 8px;
+    background: var(--accent); border: 1.5px solid var(--surface);
+    border-radius: 2px; cursor: crosshair; z-index: 3;
+  }
+  .status-fill-wrap .fill-handle:hover,
+  .status-fill-wrap .fill-handle.filling { transform: scale(1.35); }
+  tbody tr.fill-target td[data-label="Status"] { box-shadow: inset 0 0 0 2px var(--accent); }
+  body.filling-status { user-select: none; cursor: crosshair; }
+
   .row-del {
     border: none; background: transparent; color: var(--text-faint);
     cursor: pointer; font-size: 14px; padding: 2px 3px; border-radius: 5px; line-height: 1;
@@ -538,6 +552,7 @@
       display: block; margin-bottom: 5px;
     }
     td[data-label="Observação"] input[type="text"] { width: 100%; min-width: 0; text-align: left; }
+    tbody td[data-label="Status"] .status-fill-wrap { display: block; width: 100%; }
     tbody td[data-label="Status"] select.status-select { width: 100%; text-align: left; text-align-last: left; }
     .empty-state { margin: 0 10px; }
   }
@@ -553,7 +568,7 @@
     thead th, tfoot td { background: #ffe600 !important; color: #3a3300 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tbody tr.zero-pending { display: none; }
     th:first-child, td:first-child { display: none; }
-    .row-del, .row-drag { display: none !important; }
+    .row-del, .row-drag, .fill-handle { display: none !important; }
     td input, td select {
       border: none !important; background: transparent !important; color: #111 !important;
       appearance: none; padding: 2px 4px;
@@ -1218,7 +1233,7 @@
           '<td class="num" data-label="Expedidas"><span class="field-with-lock"><input type="number" min="0" data-field="expedidas" class="' + (r.expedidasManual ? "manual-input" : "") + '" value="' + r.expedidas + '">' + (r.expedidasManual ? '<button type="button" class="manual-lock" data-unlock="expedidas" title="Travado manualmente — clique para voltar ao automático">🔒</button>' : '') + '</span></td>' +
           '<td class="num" data-label="Pendentes"><span class="pending-pill ' + tone + '">' + p + '</span></td>' +
           '<td class="num" data-label="Impacto DIT"><input type="number" min="0" data-field="impactoDit" value="' + r.impactoDit + '"></td>' +
-          '<td class="center-col" data-label="Status"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select></td>' +
+          '<td class="center-col" data-label="Status"><span class="status-fill-wrap"><select class="status-select s-' + statusTone + '" data-field="status">' + statusOptionsHtml(r.status) + '</select><span class="fill-handle" data-fill-handle="status" title="Arrastar para replicar este status"></span></span></td>' +
           '<td class="center-col" data-label="Observação"><input type="text" data-field="obs" value="' + escapeHtml(r.obs) + '" placeholder="Observação..."></td>' +
         '</tr>';
       }).join("");
@@ -1245,6 +1260,7 @@
     renderSortIndicators();
     bindRowEvents();
     bindDragEvents();
+    bindFillHandleEvents();
     restoreFocusedInput(focusInfo);
   }
 
@@ -1402,6 +1418,86 @@
         var fromId = draggingId;
         draggingId = null;
         if (targetId !== fromId) reorderRows(fromId, targetId);
+      });
+    });
+  }
+
+  // Alça de preenchimento do Status (equivalente ao "arrastar" do Excel):
+  // segurar o quadradinho no canto do select e arrastar sobre outras linhas
+  // aplica o mesmo status em todas elas, do jeito que um fill handle de
+  // planilha replica o valor de uma célula pras vizinhas.
+  function bindFillHandleEvents() {
+    var tbody = document.getElementById("tbody");
+    tbody.querySelectorAll('[data-fill-handle="status"]').forEach(function (handle) {
+      handle.addEventListener("mousedown", function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        var startTr = handle.closest("tr");
+        if (!startTr) return;
+        var startId = Number(startTr.getAttribute("data-id"));
+        var startRow = state.rows.find(function (r) { return r.id === startId; });
+        if (!startRow) return;
+        var sourceStatus = startRow.status;
+
+        var allTrs = Array.prototype.slice.call(tbody.querySelectorAll("tr[data-id]"));
+        var startIdx = allTrs.indexOf(startTr);
+
+        handle.classList.add("filling");
+        document.body.classList.add("filling-status");
+
+        function highlight(targetIdx) {
+          var lo = Math.min(startIdx, targetIdx);
+          var hi = Math.max(startIdx, targetIdx);
+          allTrs.forEach(function (tr, idx) {
+            tr.classList.toggle("fill-target", idx >= lo && idx <= hi);
+          });
+        }
+
+        function idxAtPoint(x, y) {
+          var el = document.elementFromPoint(x, y);
+          var tr = el ? el.closest("tr[data-id]") : null;
+          return tr ? allTrs.indexOf(tr) : -1;
+        }
+
+        highlight(startIdx);
+
+        function onMove(ev) {
+          var idx = idxAtPoint(ev.clientX, ev.clientY);
+          if (idx !== -1) highlight(idx);
+        }
+
+        function onUp(ev) {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          handle.classList.remove("filling");
+          document.body.classList.remove("filling-status");
+          allTrs.forEach(function (tr) { tr.classList.remove("fill-target"); });
+
+          var targetIdx = idxAtPoint(ev.clientX, ev.clientY);
+          if (targetIdx === -1) targetIdx = startIdx;
+          var lo = Math.min(startIdx, targetIdx);
+          var hi = Math.max(startIdx, targetIdx);
+          if (lo === hi) return;
+
+          var changed = 0;
+          for (var i = lo; i <= hi; i++) {
+            var id = Number(allTrs[i].getAttribute("data-id"));
+            var row = state.rows.find(function (r) { return r.id === id; });
+            if (row && row.status !== sourceStatus) {
+              row.status = sourceStatus;
+              pushManualField(row);
+              changed++;
+            }
+          }
+          if (changed) {
+            persist();
+            renderTable();
+            showToast('Status "' + (sourceStatus || "— sem status —") + '" replicado em ' + changed + ' linha(s).');
+          }
+        }
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
       });
     });
   }
