@@ -666,7 +666,7 @@
   // ciclo. O painel busca sozinho — funciona tanto localmente quanto publicado
   // no Cloudflare, sem precisar de CSV manual.
   var FIREBASE_URL = "https://lastmile-59f9a-default-rtdb.firebaseio.com";
-  var FIREBASE_SYNC_INTERVAL_MS = 60000;
+  var FIREBASE_SYNC_INTERVAL_MS = 15000;
 
   var CATEGORIES = {
     XPT: { label: "XPT", color: "var(--cat-xpt)" },
@@ -949,8 +949,9 @@
     // Preserva a ordem local (inclusive reordenação manual arrastando linhas):
     // toda origem que já existia neste navegador continua na mesma posição,
     // só troca os valores automáticos (spa1/spa2/expedidas) e os manuais mais
-    // recentes. Sem isso, o sync automático (a cada 60s) devolvia sempre a
-    // ordem alfabética que o Atualizador gera, desfazendo qualquer arrasto.
+    // recentes. Sem isso, o sync automático (a cada FIREBASE_SYNC_INTERVAL_MS)
+    // devolvia sempre a ordem alfabética que o Atualizador gera, desfazendo
+    // qualquer arrasto.
     var merged = existingRows.map(function (r) {
       var key = r.grupo + "||" + r.origem;
       seen[key] = true;
@@ -1154,8 +1155,9 @@
     '<circle cx="2" cy="10.5" r="1.1"/><circle cx="6" cy="10.5" r="1.1"/></svg>';
 
   // Antes de reconstruir o tbody (chamado tanto por edições locais quanto por
-  // gatilhos externos — sync automático do Firebase a cada 60s, clique num
-  // cabeçalho pra ordenar, etc.), guarda o campo com foco e o texto exato que
+  // gatilhos externos — sync automático do Firebase a cada
+  // FIREBASE_SYNC_INTERVAL_MS, clique num cabeçalho pra ordenar, etc.),
+  // guarda o campo com foco e o texto exato que
   // está nele (mesmo vazio). Sem isso, um desses gatilhos no meio de uma
   // edição reconstrói o input a partir do valor já salvo (ex.: 0) e a pessoa
   // vê o campo "voltar" pro número antigo mesmo tendo acabado de apagá-lo.
