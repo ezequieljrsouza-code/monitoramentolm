@@ -307,7 +307,8 @@
     border-bottom: 1px solid var(--border-strong);
     white-space: nowrap;
   }
-  thead th.num, td.num { text-align: center; }
+  thead th.num { text-align: center; }
+  td.num { text-align: right; }
   thead th.center-col, td.center-col { text-align: center; }
   thead th.col-origem, td.col-origem { white-space: nowrap; }
   thead th.col-origem { text-align: center; }
@@ -341,24 +342,32 @@
     border-radius: 6px;
     font-variant-numeric: tabular-nums;
   }
-  td input[type="number"] { width: 62px; text-align: center; -moz-appearance: textfield; box-sizing: border-box; }
+  td input[type="number"] { width: 62px; text-align: right; -moz-appearance: textfield; box-sizing: border-box; }
   td input[type="text"] { min-width: 140px; box-sizing: border-box; text-align: center; }
   td input:hover { background: var(--surface-2); }
   td input:focus { background: var(--surface); border-color: var(--accent); outline: none; }
   td input[type="number"]::-webkit-outer-spin-button, td input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-  .field-with-lock { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
-  td input.manual-input {
+  /* position:relative + inline-block em vez de inline-flex: o cadeado fica
+     sobreposto (absolute) em vez de disputar espaço na linha, assim o input
+     mantém a mesma largura/alinhamento das colunas sem cadeado (Backlog,
+     Impacto DIT) e os números batem entre si mesmo com o cadeado revelado. */
+  .field-with-lock { position: relative; display: inline-block; }
+  .field-with-lock:hover input.manual-input,
+  .field-with-lock:focus-within input.manual-input {
     background: var(--warn-soft);
     border-color: var(--warn);
     color: var(--warn);
     font-weight: 700;
   }
   .manual-lock {
+    position: absolute; top: 50%; right: -19px; transform: translateY(-50%);
     border: none; background: transparent; cursor: pointer;
     font-size: 11px; line-height: 1; padding: 2px; border-radius: 4px;
-    flex-shrink: 0; opacity: 0.85;
+    opacity: 0; visibility: hidden; transition: opacity .1s;
   }
+  .field-with-lock:hover .manual-lock,
+  .field-with-lock:focus-within .manual-lock { opacity: 0.85; visibility: visible; }
   .manual-lock:hover { background: var(--warn-soft); opacity: 1; }
 
   .calc-cell { font-weight: 700; font-variant-numeric: tabular-nums; padding: 5px 10px; }
@@ -564,16 +573,27 @@
     header.page { padding: 0 0 10px; }
     main { padding: 0; gap: 12px; }
     .kpi, .group-card, .table-wrap { box-shadow: none !important; border: 1px solid #ccc !important; }
-    .kpi .bar, .pending-pill, select.status-select { background: none !important; }
+    .kpi .bar, .pending-pill { background: none !important; }
     thead th, tfoot td { background: #ffe600 !important; color: #3a3300 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     tbody tr.zero-pending { display: none; }
     th:first-child, td:first-child { display: none; }
     .row-del, .row-drag, .fill-handle { display: none !important; }
-    td input, td select {
+    td input, td select:not(.status-select) {
       border: none !important; background: transparent !important; color: #111 !important;
       appearance: none; padding: 2px 4px;
     }
     td input::placeholder { color: transparent; }
+    /* Status mantém a mesma cor por tom da tela (ex.: Em Expedição em azul) —
+       sem isso o print (via td select acima) apagava a cor de fundo/texto. */
+    select.status-select {
+      border: none !important; appearance: none; padding: 2px 4px;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    select.status-select.s-good { background-color: var(--good-soft) !important; color: var(--good) !important; }
+    select.status-select.s-info { background-color: var(--info-soft) !important; color: var(--info) !important; }
+    select.status-select.s-warn { background-color: var(--warn-soft) !important; color: var(--warn) !important; }
+    select.status-select.s-critical { background-color: var(--critical-soft) !important; color: var(--critical) !important; }
+    select.status-select.s-muted { background-color: var(--muted-chip-soft) !important; color: var(--muted-chip) !important; }
     .table-wrap { max-height: none !important; overflow: visible !important; }
     table { min-width: 0; }
   }
@@ -1047,11 +1067,26 @@
     });
   }
 
-  function filteredRows() {
+  function searchMatches(r) {
     var q = state.search.trim().toLowerCase();
-    var rows = state.rows.filter(function (r) {
+    if (!q) return true;
+    return r.origem.toLowerCase().indexOf(q) !== -1 || r.grupo.toLowerCase().indexOf(q) !== -1;
+  }
+
+  // Linhas do grupo/busca atualmente selecionados, SEM aplicar o toggle
+  // "ocultar pendentes zerados" — é a base usada pelos totais (cards, KPIs
+  // e rodapé da tabela), pra esse toggle só esconder linhas da tabela sem
+  // encolher os totais planejados/expedidos junto.
+  function baseFilteredRows() {
+    return state.rows.filter(function (r) {
       if (state.filterGroup !== "TODOS" && r.grupo !== state.filterGroup) return false;
-      if (q && r.origem.toLowerCase().indexOf(q) === -1 && r.grupo.toLowerCase().indexOf(q) === -1) return false;
+      if (!searchMatches(r)) return false;
+      return true;
+    });
+  }
+
+  function filteredRows() {
+    var rows = baseFilteredRows().filter(function (r) {
       if (state.hideZeroPending && pending(r) <= 0) return false;
       return true;
     });
@@ -1086,7 +1121,7 @@
   }
 
   function renderKpis() {
-    var rows = state.rows;
+    var rows = baseFilteredRows();
     var sum = summarize(rows);
     var pct = sum.total > 0 ? Math.round((sum.exp / sum.total) * 1000) / 10 : 0;
     var pendTone = pendingTone(sum.pend);
@@ -1118,7 +1153,7 @@
   function renderGroups() {
     var groups = ["XPT", "SVC", "NEX", "DC"];
     var html = groups.map(function (g) {
-      var rows = state.rows.filter(function (r) { return r.grupo === g; });
+      var rows = state.rows.filter(function (r) { return r.grupo === g && searchMatches(r); });
       var pend = rows.reduce(function (a, r) { return a + Math.max(0, pending(r)); }, 0);
       var tot = rows.reduce(function (a, r) { return a + total(r); }, 0);
       var active = state.filterGroup === g;
@@ -1239,7 +1274,7 @@
       }).join("");
     }
 
-    var sum = rows.reduce(function (a, r) {
+    var sum = baseFilteredRows().reduce(function (a, r) {
       a.backlog += Number(r.backlog) || 0;
       a.spa1 += Number(r.spa1) || 0;
       a.spa2 += Number(r.spa2) || 0;
@@ -1503,7 +1538,7 @@
   }
 
   function updateFooter() {
-    var rows = filteredRows();
+    var rows = baseFilteredRows();
     var sum = rows.reduce(function (a, r) {
       a.backlog += Number(r.backlog) || 0;
       a.spa1 += Number(r.spa1) || 0;
