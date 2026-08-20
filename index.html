@@ -2002,8 +2002,9 @@
       ry += rowH;
     });
 
-    // Footer
-    var sumP = summarize(pendentesRows);
+    // Footer — soma de TODAS as origens (igual aos tiles de KPI no topo),
+    // não só das linhas pendentes listadas na tabela, senão Planejadas e
+    // Expedidas ficam menores do que o total real da operação.
     ctx.fillStyle = CAP.brand;
     ctx.save();
     capRoundRect(ctx, PAD, tableTop, contentW, tableH, 10);
@@ -2014,12 +2015,12 @@
     ctx.font = "800 12px " + CAP.fontFamily;
     ctx.fillText(pendentesRows.length + " " + (pendentesRows.length === 1 ? "origem" : "origens"), colX[0] + 10, ry + footH / 2 + 4);
     ctx.textAlign = "center";
-    ctx.fillText(String(sumP.backlog), colX[1] + cols[1].w / 2, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.spa1), colX[2] + cols[2].w / 2, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.spa2), colX[3] + cols[3].w / 2, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.total), colX[4] + cols[4].w / 2, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.exp), colX[5] + cols[5].w / 2, ry + footH / 2 + 4);
-    ctx.fillText(String(sumP.pend), colX[6] + cols[6].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.backlog), colX[1] + cols[1].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.spa1), colX[2] + cols[2].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.spa2), colX[3] + cols[3].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.total), colX[4] + cols[4].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.exp), colX[5] + cols[5].w / 2, ry + footH / 2 + 4);
+    ctx.fillText(String(sum.pend), colX[6] + cols[6].w / 2, ry + footH / 2 + 4);
     ctx.textAlign = "left";
 
     y = tableTop + tableH + PAD;
