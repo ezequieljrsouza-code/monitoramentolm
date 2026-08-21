@@ -637,6 +637,7 @@
     <input type="file" id="file-import" accept=".csv,text/csv" style="display:none">
     <button class="btn ghost" id="btn-copy-report" title="Copiar report de rotas pendentes (com observações)">📋 Report</button>
     <button class="btn ghost" id="btn-clear-status-obs" title="Limpar Status e Observação de todas as origens">Limpar Status/Obs</button>
+    <button class="btn ghost" id="btn-unlock-all" title="Destravar todos os campos travados manualmente (🔒) e voltar a seguir o valor automático">🔓 Remover travas</button>
     <button class="btn" id="btn-print">📷 Capturar pendentes</button>
     <button class="btn primary" id="btn-export">⤓ Baixar para Sheets (CSV)</button>
   </section>
@@ -926,6 +927,37 @@
     persist();
     renderAll();
     showToast("Status e Observação limpos em todas as origens.");
+  }
+
+  // Destrava de uma vez todos os campos travados manualmente (spa1/spa2/
+  // expedidas com o cadeado 🔒) em todas as origens, igual a clicar em cada
+  // cadeado individualmente — grava cada linha alterada no Firebase e força
+  // um sync imediato pra já trazer os valores automáticos.
+  function removerTravasManuais() {
+    var travados = state.rows.filter(function (r) {
+      return r.spa1Manual || r.spa2Manual || r.expedidasManual;
+    });
+    if (!travados.length) {
+      showToast("Nenhum campo travado manualmente.");
+      return;
+    }
+    if (!confirm("Destravar " + travados.length + " origem(ns) com campos travados manualmente e voltar ao valor automático?")) return;
+    travados.forEach(function (row) {
+      row.spa1Manual = false;
+      row.spa2Manual = false;
+      row.expedidasManual = false;
+      var key = row.grupo + "||" + row.origem;
+      clearTimeout(manualPushTimers[key]);
+      fetch(FIREBASE_URL + "/manual/" + firebaseSafeKey(key) + ".json", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(buildManualPayload(row))
+      }).catch(function () {});
+    });
+    persist();
+    renderAll();
+    showToast("Travas removidas — buscando valores automáticos...");
+    syncFromFirebase(false);
   }
 
   // Combina as origens extraídas automaticamente (spa1/spa2/expedidas) com os
@@ -2184,6 +2216,7 @@
 
     document.getElementById("btn-copy-report").addEventListener("click", copiarReport);
     document.getElementById("btn-clear-status-obs").addEventListener("click", limparStatusObs);
+    document.getElementById("btn-unlock-all").addEventListener("click", removerTravasManuais);
     document.getElementById("btn-print").addEventListener("click", capturarComoImagem);
 
     bindSortEvents();
